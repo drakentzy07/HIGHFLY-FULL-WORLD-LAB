@@ -1,0 +1,22 @@
+{
+  "name": "HIGHFLY FULL WORLD — private original 0.45.4 offline",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+  "workspaceFolder": "/workspaces/HIGHFLY-FULL-WORLD-LAB",
+  "forwardPorts": [
+    5173
+  ],
+  "portsAttributes": {
+    "5173": {
+      "label": "ClaudeCraft 0.45.4 Offline / Studio",
+      "onAutoForward": "notify",
+      "protocol": "http"
+    }
+  },
+  "postCreateCommand": "bash scripts/bootstrap_original.sh",
+  "remoteUser": "node"
+}
