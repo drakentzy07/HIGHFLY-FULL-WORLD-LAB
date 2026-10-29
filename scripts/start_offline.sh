@@ -10,4 +10,4 @@ fi
 echo "Starting local offline-capable game and map editor at port 5173."
 echo "Codespaces: keep the forwarded port PRIVATE. In the game choose Play Offline."
 cd "$SRC"
-exec pnpm run dev -- --host 0.0.0.0 --port 5173
+exec npx --yes pnpm@10.34.5 exec vite --host 0.0.0.0 --port 5173
