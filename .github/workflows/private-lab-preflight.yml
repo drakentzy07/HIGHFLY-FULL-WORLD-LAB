@@ -1,0 +1,34 @@
+name: HIGHFLY 0.45.4 Private Offline Lab — Preflight
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - '.devcontainer/**'
+      - '.gitignore'
+      - '.github/workflows/private-lab-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Verify workspace safety and startup scripts (no game clone)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bash syntax checks
+        run: bash -n scripts/bootstrap_original.sh scripts/start_offline.sh
+      - name: Audit/parser and provenance tests
+        run: node --test tests/*.test.mjs
+      - name: Scope of verification
+        run: |
+          echo "Script and classification tests only: NOT a game build."
+          echo "Full original runtime is downloaded only when a PRIVATE Codespace starts."
+          echo "Do not turn Codespaces port public or redistribute original multimedia."
