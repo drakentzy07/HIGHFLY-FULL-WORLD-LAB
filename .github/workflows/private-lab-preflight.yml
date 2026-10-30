@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: '22'
       - name: Bash syntax checks
-        run: bash -n scripts/bootstrap_original.sh scripts/start_offline.sh scripts/start_preview_0447.sh
+        run: bash -n scripts/bootstrap_original.sh scripts/start_offline.sh scripts/start_preview_0447.sh scripts/audit_kaykit_0447.sh
       - name: Audit/parser and provenance tests
         run: node --test tests/*.test.mjs
       - name: Scope of verification
