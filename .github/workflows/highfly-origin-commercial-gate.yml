@@ -1,0 +1,46 @@
+name: HIGHFLY ORIGIN v0.44.7 — commercial rights gate (LOCKED)
+
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - 'config/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/highfly-origin-commercial-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rights-gate:
+    name: Guard provenance, source separation and commercial release LOCK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source and license gate syntax
+        run: |
+          node --check scripts/highfly_release_gate.mjs
+          node --check scripts/highfly_stage_code_0447.mjs
+          node --check scripts/highfly_catalog_kaykit_v7.mjs
+      - name: Run tests including fail-closed release policy
+        run: node --test tests/*.test.mjs
+      - name: Validate manifest preflight without granting release
+        run: node scripts/highfly_release_gate.mjs --preflight
+      - name: Confirm commercial release is BLOCKED
+        run: |
+          if node scripts/highfly_release_gate.mjs --release; then
+            echo "ERROR: default-commercial-release lock was bypassed"
+            exit 1
+          else
+            echo "Expected: commercial release blocked. Private development is permitted."
+          fi
+      - name: Scope and restrictions
+        run: |
+          echo "Source baseline pinned to v0.44.7 / 493c35a."
+          echo "No original media distributed. No build or deployment done."
+          echo "CI green means safety unit tests ONLY; NOT commercial clearance."
