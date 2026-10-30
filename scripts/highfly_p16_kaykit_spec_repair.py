@@ -190,9 +190,17 @@ def runtime_missing(stage: Path) -> dict:
     # Collect hardcoded boot resources and scene references. This is diagnostic,
     # not a complete dynamic URL graph.
     for name in ("src/render/props.ts", "src/render/dungeon.ts",
-                 "src/render/eastbrook_town.ts"):
+                 "src/render/eastbrook_town.ts", "src/sim/eastbrook_layout.ts"):
         text = (stage / name).read_text(encoding="utf8", errors="replace")
         assets.update(re.findall(r"""['"`](/?models/(?:biome|dungeon)/[a-zA-Z0-9_.-]+\.glb)['"`]""", text))
+    # The dungeon loader builds its URLs from arrays rather than literal paths;
+    # include these separately or they vanish from the diagnostic report.
+    dungeon_text = (stage / "src/render/dungeon.ts").read_text(encoding="utf8")
+    for roster in ("KIT_MODELS", "BITS_MODELS"):
+        declaration = re.search(r"const " + roster + r" = \\[(.*?)\\] as const;", dungeon_text, re.S)
+        if declaration:
+            for name in re.findall(r"'([A-Za-z0-9_]+)'", declaration.group(1)):
+                assets.add("models/dungeon/" + name + ".glb")
     missing = sorted(s.lstrip("/") for s in assets
                      if not (base / s.lstrip("/")).is_file())
     return {"literalWorldModelReferencesScanned": len(assets),
