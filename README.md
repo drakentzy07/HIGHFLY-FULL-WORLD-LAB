@@ -21,6 +21,19 @@
 
 **Keep the Codespace port private. Never upload/dist or deploy the original client, including generated `dist/`.** The original game includes nonredistributable assets. This branch is NOT approved for Pages distribution. The old v0.45.4 Pages trial and its scripts are historical and are not the 0.44.7 game or an approval to publish.
 
+## Fase 1 — auditoría KayKit iniciada (2026-10-30)
+
+El modelo KayKit ya aparece en el creador y el mundo offline funciona en la prueba PC. La espera aproximada de 20 s del visor está anotada como optimización pendiente. Ver [informe de la prueba y plan de integración](docs/HIGHFLY_V0447_PC_BASELINE_AND_NEXT.md).
+
+Con el servidor del juego funcionando, abrir una **segunda terminal** y ejecutar:
+
+```bash
+git pull --ff-only
+bash scripts/audit_kaykit_0447.sh
+```
+
+Los resultados se guardan solamente en `.workspace/reports/v0.44.7/media/`; no se modifica la compilación ni se publican assets. Toda etiqueta CC0 es provisional hasta completar la revisión legal individual.
+
 ## Next gates
 
 - Functional PC baseline: character, Eastbrook, AI/combat, quests, NPC, skills, loot, inventory, equipment, editor/playtest.
