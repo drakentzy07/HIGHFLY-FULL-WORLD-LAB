@@ -2,7 +2,7 @@
 # Start ONLY the upstream development client. No server accounts, no deploy.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="$ROOT/.workspace/claudecraft-v0.45.4"
+SRC="$ROOT/.workspace/claudecraft-v0.44.7"
 if [[ ! -f "$SRC/package.json" ]]; then
   echo "Original checkout missing. First run: bash scripts/bootstrap_original.sh" >&2
   exit 2
