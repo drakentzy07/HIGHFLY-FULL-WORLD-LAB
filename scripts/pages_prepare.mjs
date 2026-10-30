@@ -42,13 +42,11 @@ console.log('Offline Pages flag enabled; MIT engine and world logic remain from 
 // instead of rebuilding gains against missing paid/noncommercial audio.
 const sfx=path.join(project,'src/game/sfx_manifest.generated.ts');
 const originalSfx=readFileSync(sfx,'utf8');
-const marker='export const SFX_CATALOG_HASH';
+const marker='export const SFX_CLIPS';
 const start=originalSfx.indexOf(marker);
-if(start<0||!originalSfx.includes('export const SFX_CLIPS'))
+if(start<0||!originalSfx.includes('export const SFX_GAIN_LIMITS'))
   throw Error('UPSTREAM_SFX_MANIFEST_CHANGED');
 const silent=originalSfx.slice(0,start)+
-  "export const SFX_CATALOG_HASH = 'HIGHFLY_SILENT_OFFLINE';\n"+
-  "export const SFX_FIXED_CATALOG_KEYS: readonly string[] = [];\n"+
   "export const SFX_CLIPS: Record<string,SfxEntry> = {};\n"+
   "export type SfxId = string;\n";
 writeFileSync(sfx,silent);
