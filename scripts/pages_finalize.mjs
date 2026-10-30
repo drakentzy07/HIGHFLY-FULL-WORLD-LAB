@@ -44,11 +44,14 @@ for(const a of manifest.assets){
  if(!existsSync(path.join(dist,rel)))throw Error('APPROVED_MEDIA_MISSING: '+rel);
 }
 copyFileSync(path.join(source,'LICENSE'),path.join(dist,'UPSTREAM_MIT_LICENSE.txt'));
-writeFileSync(path.join(dist,'HIGHFLY_TRIAL_NOTICE.txt'),
-'HIGHFLY experimental 0.45.4 MIT-engine recovery. The original is by Levy Street. This is an independent test, not their official game.\n'
-+'Only '+manifest.assets.length+' sha-pinned CC0 multimedia files were shipped. Everything else is withheld until rights review.\n'
-+'Missing models/sounds/graphics are expected; no guarantee of fully working quests, HUD, AI, map or editor.\n'
-+'HIGHFLY repository: https://github.com/drakentzy07/HIGHFLY-FULL-WORLD-LAB\n');
+writeFileSync(path.join(dist,'HIGHFLY_TRIAL_NOTICE.txt'),[
+  'HIGHFLY experimental ClaudeCraft 0.45.4 MIT-engine recovery. The original is by Levy Street.',
+  'Independent test, not official ClaudeCraft. Only 16 pinned CC0 multimedia files shipped.',
+  'All other media withheld pending rights review. Missing visuals/sounds are expected.',
+  'No claim yet that quests, combat, map, character and editor work end to end.',
+  'Repository: https://github.com/drakentzy07/HIGHFLY-FULL-WORLD-LAB',
+  ''
+].join('\n'));
 writeFileSync(path.join(dist,'.nojekyll'),'');
 console.log('PAGES RELEASE GATE: checked='+files+' allowedMedia='+retainedMedia+' excluded='+deleted+' bytes='+bytes);
 console.log('Original code is MIT; original multimedia NOT redistributed except the 16 individually pinned CC0 items.');
