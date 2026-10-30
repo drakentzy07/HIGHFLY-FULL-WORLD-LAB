@@ -111,6 +111,9 @@ class KayKitOriginalSpecMappingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             stage = Path(temp)
             (stage / "src/render").mkdir(parents=True)
+            (stage / "src/sim").mkdir(parents=True)
+            (stage / "src/sim/eastbrook_layout.ts").write_text(
+                "const asset = '/models/biome/kcas_wall_window.glb';")
             for file in ("props.ts", "dungeon.ts", "eastbrook_town.ts"):
                 (stage / "src/render" / file).write_text(
                     "const p = '/models/biome/kcas_wall_window.glb';")
