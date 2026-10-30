@@ -244,7 +244,7 @@ def import_batch(reference: Path, stage: Path, report: Path,
                 len(relative.parts) < 3 or relative.parts[0] != "models" or
                 relative.parts[1] not in ALLOWED_GROUPS or
                 relative.suffix.lower() != ".glb" or
-                "\\\\" in item["target"]):
+                "\\" in item["target"]):
             raise RuntimeError("INVALID_PRIVATE_MEDIA_TARGET: " + str(relative))
         if item["target"] in seen:
             raise RuntimeError("DUPLICATE_MEDIA_TARGET: " + item["target"])
