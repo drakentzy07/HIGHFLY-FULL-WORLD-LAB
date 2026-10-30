@@ -135,10 +135,12 @@ def inventory(original: Path, stage: Path, table: dict) -> dict:
 def preview_patches(stage: Path) -> list[tuple[Path, str, str]]:
     manifest = stage / "src/render/characters/manifest.ts"
     main = stage / "src/main.ts"
-    if not manifest.is_file() or not main.is_file():
-        raise RuntimeError("P16_PRIVATE_CHARACTER_SOURCE_MISSING")
+    media = stage / "src/render/assets/media.ts"
+    if not all(p.is_file() and not p.is_symlink() for p in (manifest, main, media)):
+        raise RuntimeError("P16_PRIVATE_CHARACTER_OR_MEDIA_SOURCE_MISSING")
     before_manifest = manifest.read_text(encoding="utf8")
     before_main = main.read_text(encoding="utf8")
+    before_media = media.read_text(encoding="utf8")
     if "HIGHFLY_P4_VISUAL_BRIDGE_START" not in before_manifest or "HIGHFLY_P13_OWNED_KNIGHT_PREVIEW" not in before_main:
         raise RuntimeError("P16_P4_OR_P13_CHARACTER_BRIDGE_REQUIRED")
     old = "  const heroBase = VISUALS.player_warrior;\n  if (heroBase) VISUALS.player_warrior = {\n    ...heroBase,\n"
@@ -162,8 +164,25 @@ def preview_patches(stage: Path) -> list[tuple[Path, str, str]]:
         after_main = before_main.replace(old_main, new_main, 1)
     else:
         raise RuntimeError("P16_PREVIEW_START_WEAPON_ANCHOR_MISSING")
+    # The pinned upstream manifest.generated.ts resolves production GLBs to
+    # /media/<OLD_SHA>.glb. P15 only stages our own KayKit under /models/...,
+    # so keeping the old manifest makes valid owned GLBs still 404. Only the
+    # private HIGHFLY Vite build bypasses the legacy manifest.
+    media_before = "  if (import.meta.env.DEV) return \`/\${logical}\`;"
+    media_after = (
+        "  // HIGHFLY_P16_OWNED_MEDIA_PATHS: stage-owned GLBs use Vite public/ URLs.\\n"
+        "  if (import.meta.env.VITE_HIGHFLY_P4 === '1') return \`/\${logical}\`;\\n"
+        + media_before
+    )
+    if "HIGHFLY_P16_OWNED_MEDIA_PATHS" in before_media:
+        after_media = before_media
+    elif before_media.count(media_before) == 1:
+        after_media = before_media.replace(media_before, media_after, 1)
+    else:
+        raise RuntimeError("P16_LEGACY_MEDIA_MANIFEST_ROUTING_ANCHOR_MISSING")
     return [(manifest, before_manifest, after_manifest),
-            (main, before_main, after_main)]
+            (main, before_main, after_main),
+            (media, before_media, after_media)]
 
 def runtime_missing(stage: Path) -> dict:
     base = stage / "public"
