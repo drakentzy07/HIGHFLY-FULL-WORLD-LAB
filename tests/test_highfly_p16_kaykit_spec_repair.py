@@ -76,7 +76,10 @@ class KayKitOriginalSpecMappingTests(unittest.TestCase):
             stage = Path(temp)
             manifest = stage / "src/render/characters/manifest.ts"
             main = stage / "src/main.ts"
+            media = stage / "src/render/assets/media.ts"
             manifest.parent.mkdir(parents=True)
+            media.parent.mkdir(parents=True, exist_ok=True)
+            media.write_text("export function assetUrl(url: string) {\\n  if (import.meta.env.DEV) return `/${logical}`;\\n}\\n")
             manifest.write_text("""// HIGHFLY_P4_VISUAL_BRIDGE_START
   const heroBase = VISUALS.player_warrior;
   if (heroBase) VISUALS.player_warrior = {
@@ -89,12 +92,15 @@ class KayKitOriginalSpecMappingTests(unittest.TestCase):
     return;
 """)
             patches = p.preview_patches(stage)
-            self.assertEqual(len(patches), 2)
+            self.assertEqual(len(patches), 3)
             self.assertIn("attach: []", patches[0][2])
             self.assertIn("weaponSlots: []", patches[0][2])
             self.assertIn("setClass('warrior', null, null)", patches[1][2])
+            self.assertIn("HIGHFLY_P16_OWNED_MEDIA_PATHS", patches[2][2])
+            self.assertIn("VITE_HIGHFLY_P4", patches[2][2])
             manifest.write_text(patches[0][2])
             main.write_text(patches[1][2])
+            media.write_text(patches[2][2])
             again = p.preview_patches(stage)
             self.assertTrue(all(a == b for _, a, b in again))
             self.assertEqual(patches[0][0].read_text(), again[0][1])
