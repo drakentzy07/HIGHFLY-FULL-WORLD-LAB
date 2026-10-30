@@ -152,8 +152,8 @@ def reconstruct(parts: tuple[Path, Path], output: Path, report: Path, deep_crc: 
         # A valid central directory at the very end proves the concatenated stream
         # is structurally a readable ZIP; does NOT prove each model CRC unless flagged.
         indexed = verify_and_index(temp, verify_crc=deep_crc)
-        if indexed["packCounts"].get("OTHER", 0) == indexed["archiveFiles"] - 1:
-            raise ValueError("Pack directory names not found: investigate archive before use")
+        if not any(name != "OTHER" for name in indexed["packCounts"]):
+            raise ValueError("No KayKit pack directory found in rebuilt ZIP; investigate before use")
         check_private_path(output)
         os.replace(temp, output)
         summary = {
