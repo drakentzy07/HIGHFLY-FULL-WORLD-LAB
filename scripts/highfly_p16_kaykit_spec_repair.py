@@ -168,10 +168,10 @@ def preview_patches(stage: Path) -> list[tuple[Path, str, str]]:
     # /media/<OLD_SHA>.glb. P15 only stages our own KayKit under /models/...,
     # so keeping the old manifest makes valid owned GLBs still 404. Only the
     # private HIGHFLY Vite build bypasses the legacy manifest.
-    media_before = "  if (import.meta.env.DEV) return \`/\${logical}\`;"
+    media_before = "  if (import.meta.env.DEV) return `/${logical}`;"
     media_after = (
-        "  // HIGHFLY_P16_OWNED_MEDIA_PATHS: stage-owned GLBs use Vite public/ URLs.\\n"
-        "  if (import.meta.env.VITE_HIGHFLY_P4 === '1') return \`/\${logical}\`;\\n"
+        "  // HIGHFLY_P16_OWNED_MEDIA_PATHS: use stage-owned Vite public/ media.\n"
+        "  if (import.meta.env.VITE_HIGHFLY_P4 === '1') return `/${logical}`;\n"
         + media_before
     )
     if "HIGHFLY_P16_OWNED_MEDIA_PATHS" in before_media:
