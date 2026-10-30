@@ -39,3 +39,15 @@ test('Codespaces port remains private in documentation and devcontainer is set u
   assert.ok(dev.forwardPorts.includes(4173));
   assert.ok(readFileSync(new URL('../.gitignore',import.meta.url),'utf8').includes('.workspace/'));
 });
+
+
+test('private preview is isolated and guarded, not a public deployment',()=>{
+  const start=readFileSync(new URL('../scripts/start_preview_0447.sh',import.meta.url),'utf8');
+  const patch=readFileSync(new URL('../scripts/prepare_preview_0447.mjs',import.meta.url),'utf8');
+  assert.match(start,/493c35a108cef6c8aa290e8793107b1cd117886e/);
+  assert.match(start,/--port 4173/);
+  assert.match(start,/VITE_HIGHFLY_OFFLINE_LAB=1/);
+  assert.match(patch,/offline_mode_gate\.ts/);
+  assert.match(patch,/UPSTREAM_SOURCE_CHANGED/);
+  assert.match(readFileSync(new URL('../README.md',import.meta.url),'utf8'),/Private|PRIVATE/);
+});
