@@ -197,7 +197,7 @@ def runtime_missing(stage: Path) -> dict:
     # include these separately or they vanish from the diagnostic report.
     dungeon_text = (stage / "src/render/dungeon.ts").read_text(encoding="utf8")
     for roster in ("KIT_MODELS", "BITS_MODELS"):
-        declaration = re.search(r"const " + roster + r" = \\[(.*?)\\] as const;", dungeon_text, re.S)
+        declaration = re.search(r"const " + roster + r" = \[(.*?)\] as const;", dungeon_text, re.S)
         if declaration:
             for name in re.findall(r"'([A-Za-z0-9_]+)'", declaration.group(1)):
                 assets.add("models/dungeon/" + name + ".glb")
