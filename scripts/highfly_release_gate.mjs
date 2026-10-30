@@ -14,7 +14,7 @@ const REQUIRED_CHECKS = ['mediaProvenance','thirdPartyDependencies',
 const FORBIDDEN = /(?:^|\/)(?:woc|claudecraft|craftpix)(?:[/. _-]|$)/i;
 
 export function strictRelativePath(v) {
-  if (typeof v !== 'string' || !v || v.includes('\') || v.includes('..') ||
+  if (typeof v !== 'string' || !v || v.includes('\\') || v.includes('..') ||
       v.includes('//') || v.startsWith('/') || v.endsWith('/') ||
       !/^[a-zA-Z0-9._\/() -]+$/.test(v)) return false;
   return v.split('/').every(x => x !== '.' && x !== '..' && x !== '');
