@@ -146,7 +146,7 @@ def preview_patches(stage: Path) -> list[tuple[Path, str, str]]:
     old = "  const heroBase = VISUALS.player_warrior;\n  if (heroBase) VISUALS.player_warrior = {\n    ...heroBase,\n"
     new = (old +
         "    // " + P16_MARK + ": temporary owned Knight without old weapon GLBs.\n"
-        "    show: [],\n"
+        "    show: undefined,\n"
         "    attach: [],\n"
         "    weaponSlots: [],\n"
         "    offhandSlot: undefined,\n")
