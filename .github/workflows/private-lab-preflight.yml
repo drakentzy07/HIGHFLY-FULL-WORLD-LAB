@@ -1,8 +1,8 @@
-name: HIGHFLY 0.45.4 Private Offline Lab — Preflight
+name: HIGHFLY 0.44.7 KayKit Private Offline Lab — Preflight
 
 on:
   push:
-    branches: [main]
+    branches: [highfly-kaykit-v0447-lab]
     paths:
       - 'scripts/**'
       - 'tests/**'
@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: '22'
       - name: Bash syntax checks
-        run: bash -n scripts/bootstrap_original.sh scripts/start_offline.sh
+        run: bash -n scripts/bootstrap_original.sh scripts/start_offline.sh scripts/start_preview_0447.sh
       - name: Audit/parser and provenance tests
         run: node --test tests/*.test.mjs
       - name: Scope of verification
