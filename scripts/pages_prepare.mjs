@@ -36,3 +36,20 @@ mediaSource=mediaSource.replace(old,
 writeFileSync(media,mediaSource);
 console.log('HIGHFLY STRICT STAGE: all source public media removed; only '+staged.length+' exact CC0 blobs restored.');
 console.log('Offline Pages flag enabled; MIT engine and world logic remain from original source.');
+
+// The upstream generated SFX manifest describes recordings not licensed for
+// independent HIGHFLY distribution. Replace it with a SILENT, empty manifest
+// instead of rebuilding gains against missing paid/noncommercial audio.
+const sfx=path.join(project,'src/game/sfx_manifest.generated.ts');
+const originalSfx=readFileSync(sfx,'utf8');
+const marker='export const SFX_CATALOG_HASH';
+const start=originalSfx.indexOf(marker);
+if(start<0||!originalSfx.includes('export const SFX_CLIPS'))
+  throw Error('UPSTREAM_SFX_MANIFEST_CHANGED');
+const silent=originalSfx.slice(0,start)+
+  "export const SFX_CATALOG_HASH = 'HIGHFLY_SILENT_OFFLINE';\n"+
+  "export const SFX_FIXED_CATALOG_KEYS: readonly string[] = [];\n"+
+  "export const SFX_CLIPS: Record<string,SfxEntry> = {};\n"+
+  "export type SfxId = string;\n";
+writeFileSync(sfx,silent);
+console.log('SFX replaced with empty manifest: audio system intact, no licensed recordings downloaded.');
