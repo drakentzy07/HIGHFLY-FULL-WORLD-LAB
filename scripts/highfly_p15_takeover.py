@@ -63,6 +63,11 @@ SAFE_MEDIA_FAMILIES = (
 COPY_MAX_FILE_BYTES = 90_000_000
 MAX_IMPORT_BATCHES = 5
 SOURCE_CODE_SUFFIXES = p14.CODE_SUFFIXES
+# Locally generated audit metadata present in the reference checkout but not
+# tracked source code. It is not a runtime asset and must never block takeover.
+GENERATED_DIAGNOSTICS_SKIP = frozenset({
+    "src/ui/i18n.status.json",
+})
 
 # New FIRST-PARTY graphic, not sourced from ClaudeCraft, owned by HIGHFLY.
 HIGHFLY_LOGO = """<svg xmlns="http://www.w3.org/2000/svg" width="700" height="220" viewBox="0 0 700 220" role="img" aria-labelledby="t d">
@@ -151,6 +156,11 @@ def missing_code(original: Path, stage: Path) -> list[dict]:
     for relative in info["missingCodeFiles"]:
         if not relative.startswith(("src/", "server/", "data/")):
             raise RuntimeError("P15_UNEXPECTED_MISSING_CODE_PATH: " + relative)
+        # Generated i18n status is diagnostic metadata in the reference
+        # checkout, not tracked application source. P14 may count it as code
+        # based solely on its .json suffix; skip without copying its bytes.
+        if relative in GENERATED_DIAGNOSTICS_SKIP:
+            continue
         src = original / relative
         dst = stage / relative
         if (src.suffix.lower() not in SOURCE_CODE_SUFFIXES or src.is_symlink()
@@ -219,7 +229,10 @@ def prepare(original: Path, stage: Path, archive: Path, out: Path) -> dict:
     with __import__("zipfile").ZipFile(archive) as z:
         index = p12.index_models(p12.zip_members(z))
     avail = p12.source_manifest(original, stage, index)
+    skipped_generated = sorted(set(p14.code_inventory(original, stage)["missingCodeFiles"])
+                               & GENERATED_DIAGNOSTICS_SKIP)
     return {"code": code, "approvedMedia": media, "html": docs,
+            "skippedGeneratedDiagnostics": skipped_generated,
             "remainingExactKayKitModels": len(avail["exactMatches"]),
             "unmatchedModelCount": sum(v for k, v in avail["statuses"].items()
                                        if k != "EXACT_SOURCE_NAME")}
@@ -304,6 +317,7 @@ def apply(original: Path = ORIGINAL, stage: Path = STAGE,
         "originalReferenceModified": False,
         "simRpgCorePreserved": after["coreRpgCodeIdentical"],
         "codeFilesRecovered": copied_code,
+        "skippedGeneratedDiagnostics": plan["skippedGeneratedDiagnostics"],
         "approvedSourceMediaRecovered": copied_media,
         "ownedKayKitModelsAdded": imported_kaykit,
         "privateBrandedEntries": touched,
@@ -350,6 +364,7 @@ def main() -> None:
         plan = prepare(ORIGINAL, STAGE, ZIP, REPORT)
         print("[HIGHFLY] P15 PLAN: " + json.dumps({
             "missingMITFiles": len(plan["code"]),
+            "skippedGeneratedDiagnostics": plan["skippedGeneratedDiagnostics"],
             "verifiableCC0ApacheMedia": len(plan["approvedMedia"]),
             "remainingExactKayKitModels": plan["remainingExactKayKitModels"],
             "unmatchedOrAmbiguousWorldModels": plan["unmatchedModelCount"],
