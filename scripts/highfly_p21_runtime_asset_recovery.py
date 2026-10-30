@@ -262,7 +262,7 @@ def install(reference: Path, stage: Path, rows: list[dict]) -> list[dict]:
                 temp = Path(opened.name)
                 with src.open("rb") as f:
                     shutil.copyfileobj(f, opened)
-            if p12.digest(temp) != row["sourceSha256"] or target.exists():
+            if p12.digest(temp) != row["sourceSha256"] or target.exists() or target.is_symlink():
                 raise RuntimeError("P21_COPY_CHANGED_SOURCE_OR_DESTINATION")
             os.replace(temp, target)
             installed.append({"path": row["path"], "sha256": row["sourceSha256"],
