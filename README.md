@@ -1,45 +1,50 @@
-# HIGHFLY WORLD — KayKit-first RPG lab (ClaudeCraft v0.44.7)
+# HIGHFLY ORIGIN — Comercial, independiente y KayKit-first
 
-**Base elegida:** v0.44.7 — commit `493c35a108cef6c8aa290e8793107b1cd117886e`. This branch is an independent HIGHFLY development lab. The v0.45.4 reference remains untouched on `main`.
+**Fuente base exclusiva: ClaudeCraft v0.44.7** (`493c35a108cef6c8aa290e8793107b1cd117886e`). **No** usamos la v0.45.4 como base. Mantener la 0.44.7 jugable intacta en `highfly-kaykit-v0447-lab`.
 
-**Why:** v0.44.7 uses the KayKit Rig_Medium character/animation pipeline and KayKit Medieval Hexagon houses, harbor and chapel. We will integrate the user's KayKit Complete library, preserving the MIT RPG world, quests, AI, loot and editor; blocked media will be replaced **before** public distribution. This branch does NOT contain the full original game or the paid KayKit Complete files.
+## Estado actual
 
-## Launch private Codespaces
+- Código MIT de v0.44.7: candidato a reutilización legal manteniendo avisos.
+- Multimedia original: **NO** aprobada para distribuir. 6.443 recursos, catalogados parcialmente.
+- KayKit Complete v7: tenemos el listado de 23 packs; **todavía no importamos los modelos originales** al Codespace.
+- Release comercial: **LOCKED**. La rama actual no entrega una build jugable propia.
+- La publicación automática histórica de ClaudeCraft 0.45.4 fue retirada de **esta rama comercial**.
 
-1. Open this branch on GitHub and choose **Code → Codespaces → Create codespace on highfly-kaykit-v0447-lab**. Use a 4-core / 8-GB machine if available. GitHub may charge for usage.
-2. The devcontainer will run `bash scripts/bootstrap_original.sh` on creation. It downloads the pinned upstream into the gitignored `.workspace/claudecraft-v0.44.7/`, installs packages and writes the license-family audit under `.workspace/reports/v0.44.7/`.
-3. In VS Code terminal:
-   ```bash
-   bash scripts/start_preview_0447.sh
-   ```
-   This **private optimized build** is preferred over Vite development mode, which can overload the Codespaces HTTP/2 tunnel with thousands of source modules.
-4. In **Ports**, keep port **4173** marked **Private**. Open its HTTPS URL and choose **Offline**, create a character, then enter world. The editor is at the same origin `/editor.html`.
-5. Optional rapid dev mode (unbundled Vite modules, port 5173):
-   ```bash
-   bash scripts/start_offline.sh
-   ```
+## Arquitectura
 
-**Keep the Codespace port private. Never upload/dist or deploy the original client, including generated `dist/`.** The original game includes nonredistributable assets. This branch is NOT approved for Pages distribution. The old v0.45.4 Pages trial and its scripts are historical and are not the 0.44.7 game or an approval to publish.
+| Ruta | Función |
+|---|---|
+| `scripts/highfly_prepare_commercial_p0.sh` | Prepara copia privada de **código**, v0.44.7, sin multimedia original |
+| `scripts/highfly_catalog_kaykit_v7.mjs` | Inventaría archivos KayKit reales cargados por el usuario en carpeta privada |
+| `scripts/highfly_release_gate.mjs` | Bloquea releases hasta comprobar archivo, hash, licencia y controles finales |
+| `config/highfly_approved_media.json` | Lista exacta de medios aprobados; **vacía** al empezar |
+| `config/highfly_release_policy.json` | Aprobación final; **false** al empezar |
 
-## Fase 1 — auditoría KayKit iniciada (2026-10-30)
-
-El modelo KayKit ya aparece en el creador y el mundo offline funciona en la prueba PC. La espera aproximada de 20 s del visor está anotada como optimización pendiente. Ver [informe de la prueba y plan de integración](docs/HIGHFLY_V0447_PC_BASELINE_AND_NEXT.md).
-
-Con el servidor del juego funcionando, abrir una **segunda terminal** y ejecutar:
+## Código HIGHFLY independiente (Codespace privado de esta rama)
 
 ```bash
-git pull --ff-only
-bash scripts/audit_kaykit_0447.sh
+bash scripts/bootstrap_original.sh
+bash scripts/highfly_prepare_commercial_p0.sh
 ```
 
-Los resultados se guardan solamente en `.workspace/reports/v0.44.7/media/`; no se modifica la compilación ni se publican assets. Toda etiqueta CC0 es provisional hasta completar la revisión legal individual.
+La primera descarga la copia original v0.44.7 bajo `.workspace/` y la segunda genera `.workspace/highfly-origin-stage-p0/` sin copiar `public/`. **El resultado NO es un juego listo para probar**, ya que faltan los medios aprobados y las referencias que los usan.
 
-## Next gates
+Para catalogar KayKit v7, transferir desde el PC los modelos originales a:
 
-- Functional PC baseline: character, Eastbrook, AI/combat, quests, NPC, skills, loot, inventory, equipment, editor/playtest.
-- Rights: exact-path manifests, hashes, sources, license, per-file replacement targets. Preserve MIT notices; independent HIGHFLY excludes project-only, rights-reserved, noncommercial and unknown media.
-- KayKit Complete: bring from user's licensed source separately, check rig/animations, scale, interiors, collisions and LOD.
-- Android landscape: test controls, camera, HUD and memory/performance on Samsung S23 Ultra.
-- Later selective port of MIT editor code from 0.45.4; no bulk merges.
+`.workspace/private-imports/The Complete KayKit Collection v7/`
 
-Read [the migration and safety plan](docs/HIGHFLY_KAYKIT_V0447_MIGRATION.md).
+y ejecutar:
+
+```bash
+node scripts/highfly_catalog_kaykit_v7.mjs
+```
+
+No subir ZIPs ni carpetas del paquete a esta rama pública. No cambiar puertos privados a públicos.
+
+## Documentos
+
+[Plan integral de independencia comercial y KayKit v7](docs/HIGHFLY_ORIGIN_COMMERCIAL_P0.md).
+
+## Aviso legal
+
+La licencia MIT del código requiere conservar los avisos correspondientes y no cubre automáticamente todas las dependencias ni archivos multimedia. No se autoriza distribución comercial hasta verificar los recursos y las marcas, además de probar el juego. Un workflow verde solo significa que los tests de políticas y scripts pasaron.
