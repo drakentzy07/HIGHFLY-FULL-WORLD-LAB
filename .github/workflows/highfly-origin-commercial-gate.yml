@@ -33,6 +33,8 @@ jobs:
         run: bash -n scripts/highfly_prepare_commercial_p0.sh
       - name: Run tests including fail-closed release policy
         run: node --test tests/*.test.mjs
+      - name: Test KayKit ZIP extraction safety (Python)
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
       - name: Validate manifest preflight without granting release
         run: node scripts/highfly_release_gate.mjs --preflight
       - name: Confirm commercial release is BLOCKED
