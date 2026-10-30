@@ -39,7 +39,7 @@ y ejecutar:
 node scripts/highfly_catalog_kaykit_v7.mjs
 ```
 
-No subir ZIPs ni carpetas del paquete a esta rama pública. No cambiar puertos privados a públicos.
+No subir ZIPs ni carpetas del paquete a esta rama pública. Mantener todos los puertos de Codespaces en visibilidad **PRIVATE**. No cambiar puertos privados a públicos.
 
 ## Documentos
 
