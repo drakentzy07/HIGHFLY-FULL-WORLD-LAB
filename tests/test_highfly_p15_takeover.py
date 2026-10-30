@@ -94,6 +94,30 @@ class HighflyTakeoverTests(unittest.TestCase):
         self.assertNotIn('rel="canonical"', modified)
         self.assertEqual(modified, p.stage_brand_html(modified))
 
+    def test_generated_status_file_excluded_and_real_code_preserved(self):
+        with tempfile.TemporaryDirectory() as folder:
+            original, stage, archive, out = self.make_world(Path(folder))
+            status = original / "src/ui/i18n.status.json"
+            status.parent.mkdir(parents=True, exist_ok=True)
+            with status.open("wb") as stream:
+                stream.truncate(6000001)
+            missing = {"missingCodeFiles": ["src/ui/i18n.status.json", "src/game.ts"]}
+            with patch.object(p.p14, "code_inventory", return_value=missing):
+                entries = p.missing_code(original, stage)
+            self.assertEqual([e["relative"] for e in entries], ["src/game.ts"])
+            self.assertFalse((stage / "src/ui/i18n.status.json").exists())
+
+    def test_unrecognized_large_code_remains_blocked(self):
+        with tempfile.TemporaryDirectory() as folder:
+            original, stage, archive, out = self.make_world(Path(folder))
+            large = original / "src/other-big.json"
+            with large.open("wb") as stream:
+                stream.truncate(6000001)
+            with patch.object(p.p14, "code_inventory",
+                              return_value={"missingCodeFiles": ["src/other-big.json"]}):
+                with self.assertRaisesRegex(RuntimeError, "P15_UNSAFE_MIT_CODE"):
+                    p.missing_code(original, stage)
+
     def test_restores_missing_code_and_licensed_boot_media_not_restricted(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
