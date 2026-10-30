@@ -90,7 +90,6 @@ jobs:
         run: |
           pnpm run i18n:gen
           pnpm run wiki:content
-          node scripts/build_sitemap.mjs
           node scripts/build_media_manifest.mjs generate
         env:
           NODE_OPTIONS: --max-old-space-size=5120
