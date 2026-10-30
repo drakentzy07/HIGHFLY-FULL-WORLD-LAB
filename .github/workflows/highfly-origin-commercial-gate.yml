@@ -27,6 +27,8 @@ jobs:
           node --check scripts/highfly_release_gate.mjs
           node --check scripts/highfly_stage_code_0447.mjs
           node --check scripts/highfly_catalog_kaykit_v7.mjs
+      - name: Check private P0 staging shell syntax
+        run: bash -n scripts/highfly_prepare_commercial_p0.sh
       - name: Run tests including fail-closed release policy
         run: node --test tests/*.test.mjs
       - name: Validate manifest preflight without granting release
