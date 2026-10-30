@@ -14,6 +14,8 @@ CREDITS = """# Asset Credits and Asset Licenses
 | Basis Universal KTX2 transcoder | Binomial LLC | source | Apache-2.0 | Yes, attribution required |
 | Terrain PBR textures (Grass001, Ground023, Rock026) | ambientCG | source | CC0 1.0 | Yes |
 | Surface-detail PBR textures (Bark012) | ambientCG | source | CC0 1.0 | Yes |
+| Worn-metal surface-detail PBR texture | Poly Haven | source | CC0 1.0 | Yes |
+| Medieval wood surface-detail PBR texture | Poly Haven | source | CC0 1.0 | Yes |
 | Canopy clump-detail textures | ambientCG | source | CC0 1.0 | Yes |
 | Thornhollow battleground terrain textures | ambientCG | source | CC0 1.0 | Yes |
 | HDRI environment maps | Poly Haven | source | CC0 1.0 | Yes |
