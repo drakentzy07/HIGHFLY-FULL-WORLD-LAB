@@ -22,6 +22,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -150,16 +151,29 @@ def allowed_media(original: Path, stage: Path, credits: str) -> list[dict]:
     return found
 
 
+def tracked_reference_file(original: Path, relative: str) -> bool:
+    # P14 inventories the reference working tree, including local build
+    # products. Only restore code actually tracked at the pinned commit.
+    # Tests without a real .git directory exercise size/path safety below.
+    if not (original / ".git").is_dir():
+        return True
+    result = subprocess.run(
+        ["git", "-C", str(original), "ls-files", "--error-unmatch", "--", relative],
+        capture_output=True, text=True, timeout=15, check=False)
+    if result.returncode not in (0, 1):
+        raise RuntimeError("P15_SOURCE_GIT_TRACKED_CHECK_FAILED: " + relative)
+    return result.returncode == 0
+
+
 def missing_code(original: Path, stage: Path) -> list[dict]:
     info = p14.code_inventory(original, stage)
     result = []
     for relative in info["missingCodeFiles"]:
         if not relative.startswith(("src/", "server/", "data/")):
             raise RuntimeError("P15_UNEXPECTED_MISSING_CODE_PATH: " + relative)
-        # Generated i18n status is diagnostic metadata in the reference
-        # checkout, not tracked application source. P14 may count it as code
-        # based solely on its .json suffix; skip without copying its bytes.
-        if relative in GENERATED_DIAGNOSTICS_SKIP:
+        # Skipped local generated diagnostics and untracked working-tree
+        # files must NEVER be mistaken for MIT code from the pinned commit.
+        if relative in GENERATED_DIAGNOSTICS_SKIP or not tracked_reference_file(original, relative):
             continue
         src = original / relative
         dst = stage / relative
@@ -229,10 +243,16 @@ def prepare(original: Path, stage: Path, archive: Path, out: Path) -> dict:
     with __import__("zipfile").ZipFile(archive) as z:
         index = p12.index_models(p12.zip_members(z))
     avail = p12.source_manifest(original, stage, index)
-    skipped_generated = sorted(set(p14.code_inventory(original, stage)["missingCodeFiles"])
-                               & GENERATED_DIAGNOSTICS_SKIP)
+    missing_paths = p14.code_inventory(original, stage)["missingCodeFiles"]
+    skipped_generated = sorted(set(missing_paths) & GENERATED_DIAGNOSTICS_SKIP)
+    skipped_untracked = sorted(
+        path for path in missing_paths
+        if path not in GENERATED_DIAGNOSTICS_SKIP
+        and not tracked_reference_file(original, path)
+    )
     return {"code": code, "approvedMedia": media, "html": docs,
             "skippedGeneratedDiagnostics": skipped_generated,
+            "skippedUntrackedReferenceFiles": skipped_untracked,
             "remainingExactKayKitModels": len(avail["exactMatches"]),
             "unmatchedModelCount": sum(v for k, v in avail["statuses"].items()
                                        if k != "EXACT_SOURCE_NAME")}
@@ -318,6 +338,7 @@ def apply(original: Path = ORIGINAL, stage: Path = STAGE,
         "simRpgCorePreserved": after["coreRpgCodeIdentical"],
         "codeFilesRecovered": copied_code,
         "skippedGeneratedDiagnostics": plan["skippedGeneratedDiagnostics"],
+        "skippedUntrackedReferenceFiles": plan["skippedUntrackedReferenceFiles"],
         "approvedSourceMediaRecovered": copied_media,
         "ownedKayKitModelsAdded": imported_kaykit,
         "privateBrandedEntries": touched,
@@ -365,6 +386,7 @@ def main() -> None:
         print("[HIGHFLY] P15 PLAN: " + json.dumps({
             "missingMITFiles": len(plan["code"]),
             "skippedGeneratedDiagnostics": plan["skippedGeneratedDiagnostics"],
+            "skippedUntrackedReferenceFiles": plan["skippedUntrackedReferenceFiles"],
             "verifiableCC0ApacheMedia": len(plan["approvedMedia"]),
             "remainingExactKayKitModels": plan["remainingExactKayKitModels"],
             "unmatchedOrAmbiguousWorldModels": plan["unmatchedModelCount"],
