@@ -94,6 +94,8 @@ class KayKitOriginalSpecMappingTests(unittest.TestCase):
             patches = p.preview_patches(stage)
             self.assertEqual(len(patches), 3)
             self.assertIn("attach: []", patches[0][2])
+            self.assertIn("show: undefined", patches[0][2])
+            self.assertNotIn("show: []", patches[0][2])
             self.assertIn("weaponSlots: []", patches[0][2])
             self.assertIn("setClass('warrior', null, null)", patches[1][2])
             self.assertIn("HIGHFLY_P16_OWNED_MEDIA_PATHS", patches[2][2])
