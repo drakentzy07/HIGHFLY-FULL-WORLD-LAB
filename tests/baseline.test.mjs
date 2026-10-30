@@ -51,3 +51,14 @@ test('private preview is isolated and guarded, not a public deployment',()=>{
   assert.match(patch,/UPSTREAM_SOURCE_CHANGED/);
   assert.match(readFileSync(new URL('../README.md',import.meta.url),'utf8'),/Private|PRIVATE/);
 });
+
+test('creation preview recovery is staged only in private clone and does not edit world',()=>{
+  const patch=readFileSync(new URL('../scripts/prepare_preview_0447.mjs',import.meta.url),'utf8');
+  assert.match(patch,/src\/main\.ts/);
+  assert.match(patch,/charactersReady/);
+  assert.match(patch,/Incomplete character preload/);
+  assert.match(patch,/UPSTREAM_PREVIEW_SOURCE_CHANGED/);
+  assert.match(patch,/updatePreviewContainer\(activePanelId\)/);
+  assert.ok(!patch.includes('src/sim/sim.ts'));
+  assert.ok(!patch.includes('src/render/renderer.ts'));
+});
