@@ -184,12 +184,14 @@ def stage_brand_html(src: str) -> str:
     src = src.replace('src="/icon-192.png"',
                       'src="/highfly-private-p15/highfly-icon.svg"')
     # Remove SEO that would claim HIGHFLY is the old project's official site.
-    src = re.sub(r'(?m)^.*<link rel="(?:canonical|alternate)"[^>]*worldofclaudecraft\.com[^>]*>.*\n',
-                 "", src)
+    src = re.sub(r'<link\b(?=[^>]*\brel="(?:canonical|alternate)")'
+                 r'(?=[^>]*worldofclaudecraft\.com)[^>]*>\s*', "", src,
+                 flags=re.IGNORECASE)
     src = re.sub(r'<script type="application/ld\+json">.*?</script>', "", src,
                  flags=re.DOTALL)
-    src = re.sub(r'(?m)^.*<(?:meta)[^>]*(?:og:url|og:image|twitter:image)[^>]*worldofclaudecraft\.com[^>]*>.*\n',
-                 "", src)
+    src = re.sub(r'<meta\b(?=[^>]*(?:og:url|og:image|twitter:image))'
+                 r'(?=[^>]*worldofclaudecraft\.com)[^>]*>\s*', "", src,
+                 flags=re.IGNORECASE)
     # Original outbound project promotional links remain in copied HTML and
     # must be removed during final HIGHFLY UI rewrite; do not imply release ready.
     src = src.replace("</head>", "  <!-- HIGHFLY_P15_BRAND: private first-party logo / title; original UI remains under migration -->\n</head>", 1)
