@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#070d1d" />
+  <title>HIGHFLY ORIGIN — P3 Movimiento y combate KayKit</title>
+  <style>
+    :root{font-family:system-ui,Segoe UI,sans-serif;color:#e9f4ff;background:#070d1d}
+    *{box-sizing:border-box}
+    body{margin:0;overflow:hidden}
+    #stage{position:fixed;inset:0}
+    header{position:absolute;left:0;right:0;top:0;padding:15px 20px;pointer-events:none;background:linear-gradient(#050918f5,#05091800)}
+    header strong{color:#6ce8f8;font-size:21px;letter-spacing:2px}
+    header small{display:block;color:#a3b7d4;margin-top:4px;font-size:11px}
+    .panel{position:absolute;bottom:16px;left:16px;right:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;z-index:2}
+    .inner{background:#0c1830e8;border:1px solid #345477;border-radius:14px;padding:12px;box-shadow:0 3px 22px #0007;max-width:100%}
+    label{display:block;font-size:11px;color:#a0b6d2;margin-bottom:6px}
+    button,select,input{font:inherit;color:#ecf9ff}
+    button,select{background:#142b4a;border:1px solid #456c99;border-radius:9px;padding:9px 12px;max-width:100%;cursor:pointer}
+    button:hover{border-color:#75dbfb}
+    button:disabled{opacity:.5}
+    .inputs{display:flex;gap:9px;flex-wrap:wrap;align-items:end}
+    .group{min-width:120px}
+    #donor{max-width:310px}
+    #clips{max-width:290px}
+    #status{font-size:12px;color:#b4d4ef;margin-top:8px;max-width:720px;overflow-wrap:anywhere}
+    .disclaimer{font-size:11px;color:#b3c6dc;line-height:1.5;max-width:240px}
+    @media(max-width:700px){
+      header strong{font-size:16px}
+      header small{font-size:9px}
+      .panel{bottom:7px;left:7px;right:7px;gap:5px}
+      .inner{padding:8px}
+      button,select{padding:7px;font-size:12px}
+      #donor{max-width:190px}#clips{max-width:180px}
+      .disclaimer{display:none}
+    }
+  </style>
+</head>
+<body>
+  <div id="stage" aria-label="Visor de animación KayKit P3"></div>
+  <header>
+    <strong>HIGHFLY ORIGIN</strong>
+    <small>LABORATORIO P3 · ANIMACIONES KAYKIT V7 · CLAUDECRAFT v0.44.7 PRIVADO</small>
+  </header>
+  <div class="panel">
+    <div class="inner">
+      <div class="inputs">
+        <div class="group"><label for="model">Modelo</label><select id="model"></select></div>
+        <div class="group"><label for="donor">Biblioteca de animaciones</label><select id="donor"></select></div>
+        <div class="group"><label for="clips">Clip a probar</label><select id="clips"><option>Sin animación</option></select></div>
+        <div><label for="speed">Velocidad</label><input id="speed" type="range" min="0.25" max="1.75" step="0.25" value="1"></div>
+        <div><button type="button" id="pause" disabled>Pausar</button></div>
+        <div><button type="button" id="reset">Centrar cámara</button></div>
+      </div>
+      <div id="status" role="status">Buscando modelos y animaciones privadas...</div>
+    </div>
+    <div class="inner disclaimer">
+      Prueba visual privada. 23/23 nombres de huesos coincidentes no garantizan una animación correcta.
+      No modifica el mundo, personajes guardados ni combate. No distribuir esta build.
+    </div>
+  </div>
+  <script type="module" src="/src/highfly_animation_lab_p3.ts"></script>
+</body>
+</html>
