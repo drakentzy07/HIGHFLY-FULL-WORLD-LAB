@@ -4,6 +4,8 @@ on:
   push:
     branches: [highfly-origin-commercial-p0]
     paths:
+      - 'README.md'
+      - 'docs/HIGHFLY_ORIGIN_COMMERCIAL_P0.md'
       - 'config/**'
       - 'scripts/**'
       - 'tests/**'
