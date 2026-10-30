@@ -56,7 +56,7 @@ if(process.argv[1]&&path.resolve(process.argv[1])===path.resolve(new URL(import.
   };
   await mkdir(target,{recursive:true});
   await writeFile(path.join(target,'CREDITS_0447_AUDIT.json'),JSON.stringify(report,null,2)+'\n');
-  const out=['# HIGHFLY — revisión inicial de medios ClaudeCraft 0.45.4',
+  const out=['# HIGHFLY — revisión inicial de medios ClaudeCraft 0.44.7',
    '', 'Referencia original: '+PINNED_UPSTREAM_SHA,
    '', 'Estado: NO APTO PARA DISTRIBUCIÓN / auditado por FAMILIAS, no por archivo',
    '',...Object.entries(report.totals).map(([k,v])=>'- '+k+': '+v),
