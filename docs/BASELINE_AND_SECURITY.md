@@ -1,24 +1,13 @@
-# HIGHFLY — Criterios de referencia 0.45.4
+# HIGHFLY KayKit / v0.44.7 — Safety and acceptance
 
-## Lo que estamos haciendo
-- Pegar un enlace a Codespaces **no es** declarar el juego clonado o jugable.
-- La copia de trabajo se crea mediante `scripts/bootstrap_original.sh` cuando se inicia un Codespace.
-- Se conserva una réplica local de los directorios de motor, interfaz, editor, servidor, datos y multimedia del runtime original. Se excluye documentación pesada y capturas históricas.
-- Descarga de código y multimedia directamente del repositorio público original, fijada al commit `ebd3aa444352952321e0108b335722fe26d35716` / `v0.45.4`.
-- `src/game/offline_mode_gate.ts` permite Play Offline únicamente en desarrollo.
-- `/editor.html` es la entrada del editor original, no una herramienta HIGHFLY adaptada.
-- Páginas, archivos ZIP, artifacts, releases y puertos públicos quedan excluidos de esta fase.
+Version is pinned at `493c35a108cef6c8aa290e8793107b1cd117886e` and only downloaded into gitignored `.workspace/` in the private Codespace. `main` retains v0.45.4 reference. Never include upstream binaries, multimedia, generated `dist/` or the user's purchased KayKit source in this public repository without reviewing exact redistribution rights and asset provenance. Ports 4173/5173 must remain PRIVATE.
 
-## Licencia y procedencia
-1. MIT se aplica al **código fuente**, con avisos. No cubre el material multimedia.
-2. Los archivos marcados `With the project only` NO entrarán en el producto HIGHFLY independiente; tampoco los reservados, CC BY-NC ni material sin licencia conocida.
-3. La descarga temporal privada para inspeccionar **no es una autorización para distribuir** el proyecto original completo.
-4. Las familias CC0 de `CREDITS.md` son solo candidatas: cada modelo/sonido/textura requiere trazabilidad por archivo y dependencias antes de su inclusión en una build.
-5. Si un edificio de Eastbrook usa un modelo prohibido, conservar layout/código MIT pero reemplazar visual, colisión y materiales con alternativas independientes.
-6. No añadir los originales a `git add`. La carpeta `.workspace/` se ignora; guardarla sin subirla ni crear paquetes redistribuibles.
+0.44.7 includes KayKit CC0 and other free assets but ALSO restricted icons, project-only props/creatures, some music/SFX and other licensed media. Treat CREDITS family entries as *candidate* rights evidence; missing entries are not free. An upstream commit passing tests is not a legal clearance. This is not a deployable HIGHFLY release.
 
-## Prueba funcional pendiente
-El primer Codespace debe verificar (y dejar por escrito resultados): inicio offline, creación de personaje, Eastbrook, NPC, misiones, combates/loot, inventario/bolsas, economía, guardado; acceso a editor, edición y playtest. Éxito de arranque no garantiza funcionalidad de servidor multijugador ni una build HIGHFLY.
+## Preflight / functional acceptance
 
-## Nota de infraestructura
-Codespaces puede tener costo y requiere capacidad de disco/RAM (el media runtime original es pesado). Puertos privados protegidos por autenticación GitHub; la dirección deja de funcionar cuando se detiene el Codespace. La variante independiente para móviles y web público se preparará después de la auditoría.
+- v0.44.7 pinned SHA, original `src/editor/main.ts`, `src/sim/sim.ts`, `CREDITS.md` found.
+- Node 22, pnpm 10.34.5 install succeeds; game boots in optimized PRIVATE preview port 4173.
+- Offline: character creation, Eastbrook, quests, NPC, combat, mobs, loot, inventory, equipment, save checked with screenshots.
+- Editor: open `/editor.html`, save local map, playtest. Test only what this version implements.
+- No public build until a fail-closed asset allowlist (file hash/provenance/license), full asset ref resolution, and browser/device regression pass.
