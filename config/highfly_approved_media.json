@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "description": "Explicit per-file approved media allowlist; empty by default. Family labels never grant approval.",
+  "assets": []
+}
