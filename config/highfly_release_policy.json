@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "project": "HIGHFLY ORIGIN",
+  "releaseApproved": false,
+  "checks": {
+    "mediaProvenance": false,
+    "thirdPartyDependencies": false,
+    "trademarksAndBranding": false,
+    "fontsAndEmbeddedArt": false,
+    "attributionsAndNotices": false,
+    "fullGameplayAndAndroid": false
+  },
+  "reviewer": null,
+  "approvedOn": null,
+  "notes": "LOCKED: independent commercial release blocked until per-file, dependency and branding reviews are completed."
+}
