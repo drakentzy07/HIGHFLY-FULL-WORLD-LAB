@@ -1,5 +1,5 @@
 {
-  "name": "HIGHFLY FULL WORLD — private original 0.45.4 offline",
+  "name": "HIGHFLY KayKit — ClaudeCraft v0.44.7 private lab",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
   "hostRequirements": {
     "cpus": 4,
@@ -8,11 +8,17 @@
   },
   "workspaceFolder": "/workspaces/HIGHFLY-FULL-WORLD-LAB",
   "forwardPorts": [
+    4173,
     5173
   ],
   "portsAttributes": {
+    "4173": {
+      "label": "HIGHFLY 0.44.7 optimized private preview",
+      "onAutoForward": "notify",
+      "protocol": "http"
+    },
     "5173": {
-      "label": "ClaudeCraft 0.45.4 Offline / Studio",
+      "label": "ClaudeCraft 0.44.7 development / editor",
       "onAutoForward": "notify",
       "protocol": "http"
     }
