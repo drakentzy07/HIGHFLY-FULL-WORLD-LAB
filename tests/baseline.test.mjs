@@ -46,7 +46,7 @@ test('private preview is isolated and guarded, not a public deployment',()=>{
   const patch=readFileSync(new URL('../scripts/prepare_preview_0447.mjs',import.meta.url),'utf8');
   assert.match(start,/493c35a108cef6c8aa290e8793107b1cd117886e/);
   assert.match(start,/--port 4173/);
-  assert.match(start,/VITE_HIGHFLY_OFFLINE_LAB=1 NODE_OPTIONS=--max-old-space-size=5120 npx --yes pnpm@10\\.34\\.5 exec vite build --base=\\//);
+  assert.ok(start.includes('VITE_HIGHFLY_OFFLINE_LAB=1 NODE_OPTIONS=--max-old-space-size=5120 npx --yes pnpm@10.34.5 exec vite build --base=/'));
   assert.match(patch,/offline_mode_gate\.ts/);
   assert.match(patch,/UPSTREAM_SOURCE_CHANGED/);
   assert.match(readFileSync(new URL('../README.md',import.meta.url),'utf8'),/Private|PRIVATE/);
