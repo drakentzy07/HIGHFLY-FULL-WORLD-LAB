@@ -299,7 +299,7 @@ def execute(apply: bool, build: bool) -> dict:
                   "items": after["items"]},
         "buildExitCode": build_exit,
         "bundlingAnomalies": unresolved_dist,
-        "buildIsVerifiedForCapturedAssets": apply and not unresolved_dist,
+        "noBundlingAnomaliesAfterBuild": apply and build and build_exit == 0 and not unresolved_dist,
         "rightsClearedForPublicRelease": False,
         "gameplayVerified": False,
         "originalGameChanged": False,
