@@ -107,7 +107,7 @@ def credits_state(reference: Path) -> dict[str, bool]:
     state = {}
     for kind, author in CREDIT_AUTHOR.items():
         state[kind] = any(
-            line.startswith("|") and f"| {author} |" in line and
+            line.startswith("|") and len(line.split("|")) > 3 and author.lower() in line.split("|")[2].lower() and
             re.search(r"\|\s*CC0 1\.0\s*\|\s*Yes\s*\|", line)
             for line in lines
         )
