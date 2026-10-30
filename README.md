@@ -20,6 +20,21 @@
 | `config/highfly_approved_media.json` | Lista exacta de medios aprobados; **vacía** al empezar |
 | `config/highfly_release_policy.json` | Aprobación final; **false** al empezar |
 
+## Reconstrucción de KayKit Complete v7 a partir de 2 ZIP de fragmentos
+
+Si los ZIP subidos contienen `fragmento_01.bin` y `fragmento_02.bin`, **no son ZIPs de packs independientes**. Son dos piezas de **un solo ZIP original**, almacenadas dentro de envoltorios ZIP. No hace falta volver a subir archivos.
+
+Ejecutar desde `highfly-origin-commercial-p0`:
+
+```bash
+git pull --ff-only
+python3 scripts/highfly_reassemble_kaykit_v7.py
+```
+
+El script comprueba nombre, orden, tamaño de ambas piezas, CRC de los envoltorios, índice ZIP reconstruido, rutas internas y duplicados; calcula SHA-256 y crea un inventario por pack. Guarda la colección **solo** en `.workspace/private-imports/KAYKIT_COMPLETE_V7_RECONSTRUIDO.zip` y el informe en `.workspace/reports/kaykit-v7/FULL_ARCHIVE_RECONSTRUCTION.json`. Por defecto no extrae ni publica ninguno de sus modelos. Si detecta un problema, no deja un ZIP aparentemente válido.
+
+**Este resultado no aprueba licencias ni crea un juego comercial**. Luego se extraerán únicamente los packs/archivos necesarios para integrar una copia de desarrollo de HIGHFLY basada en **v0.44.7**.
+
 ## Código HIGHFLY independiente (Codespace privado de esta rama)
 
 ```bash
