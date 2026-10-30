@@ -229,6 +229,29 @@ def glb_valid(path: Path) -> bool:
 
 def import_batch(reference: Path, stage: Path, report: Path,
                  archive: Path, chosen: list[dict]) -> list[dict]:
+    # Check ALL targets before calling the converter, creating temp folders,
+    # or writing any GLB. The earlier version checked per item inside the loop
+    # and could run a converter before noticing a later output collision.
+    # Fail closed on unexpected or duplicate paths.
+    secure_private(reference)
+    secure_private(stage)
+    secure_private(report)
+    secure_private(archive)
+    seen = set()
+    for item in chosen:
+        relative = PurePosixPath(item["target"])
+        if (relative.is_absolute() or ".." in relative.parts or
+                len(relative.parts) < 3 or relative.parts[0] != "models" or
+                relative.parts[1] not in ALLOWED_GROUPS or
+                relative.suffix.lower() != ".glb" or
+                "\\\\" in item["target"]):
+            raise RuntimeError("INVALID_PRIVATE_MEDIA_TARGET: " + str(relative))
+        if item["target"] in seen:
+            raise RuntimeError("DUPLICATE_MEDIA_TARGET: " + item["target"])
+        seen.add(item["target"])
+        target = stage / "public" / item["target"]
+        if target.exists() or target.is_symlink():
+            raise RuntimeError("REFUSE_TO_OVERWRITE_EXISTING_MEDIA: " + str(target))
     executable = reference / "node_modules/.bin/gltf-transform"
     if not executable.is_file():
         raise RuntimeError("GLTF_TRANSFORM_TOOL_MISSING_IN_PRIVATE_REFERENCE")
