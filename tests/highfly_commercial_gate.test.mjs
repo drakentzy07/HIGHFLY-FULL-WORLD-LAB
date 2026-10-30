@@ -52,12 +52,12 @@ test('per-file media whitelist is strict, not family-only',()=>{
 test('missing, extra or changed media blocks release',async()=>{
   const dir=await mkdtemp(path.join(tmpdir(),'highfly-rights-'));
   try {
-    await mkdir(path.join(dir,'models'),{recursive:true});
+    await mkdir(path.join(dir,'models/biome'),{recursive:true});
     const a=sampleAsset('good');
-    await writeFile(path.join(dir,'models/hexb_home_a.glb'),'good');
+    await writeFile(path.join(dir,'models/biome/hexb_home_a.glb'),'good');
     const manifest={schemaVersion:1,assets:[a]};
     assert.deepEqual(await auditMediaTree(dir,manifest),[]);
-    await writeFile(path.join(dir,'models/hexb_home_a.glb'),'changed');
+    await writeFile(path.join(dir,'models/biome/hexb_home_a.glb'),'changed');
     assert.ok((await auditMediaTree(dir,manifest)).some(x=>x.includes('SHA256_CHANGED')));
     await writeFile(path.join(dir,'models/unknown.glb'),'bad');
     assert.ok((await auditMediaTree(dir,manifest)).some(x=>x.includes('UNAPPROVED_MEDIA')));
