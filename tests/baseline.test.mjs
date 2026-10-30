@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {classifyMedia,readCreditsFamilies,PINNED_UPSTREAM_SHA} from '../scripts/audit_credits.mjs';
 
-test('original pin is immutable 0.45.4 SHA',()=>{
-  assert.equal(PINNED_UPSTREAM_SHA,'ebd3aa444352952321e0108b335722fe26d35716');
+test('original pin is immutable 0.44.7 SHA',()=>{
+  assert.equal(PINNED_UPSTREAM_SHA,'493c35a108cef6c8aa290e8793107b1cd117886e');
   const script=readFileSync(new URL('../scripts/bootstrap_original.sh',import.meta.url),'utf8');
-  assert.match(script,/--branch v0\.45\.4/);
-  assert.match(script,/ebd3aa444352952321e0108b335722fe26d35716/);
+  assert.match(script,/--branch v0\.44\.7/);
+  assert.match(script,/493c35a108cef6c8aa290e8793107b1cd117886e/);
   assert.match(script,/--sparse/);
 });
 test('strict independent media license policy blocks project-only and NC',()=>{
@@ -36,5 +36,6 @@ test('Codespaces port remains private in documentation and devcontainer is set u
   assert.equal(dev.portsAttributes['5173'].onAutoForward,'notify');
   assert.equal(dev.postCreateCommand,'bash scripts/bootstrap_original.sh');
   assert.ok(dev.forwardPorts.includes(5173));
+  assert.ok(dev.forwardPorts.includes(4173));
   assert.ok(readFileSync(new URL('../.gitignore',import.meta.url),'utf8').includes('.workspace/'));
 });
