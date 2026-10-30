@@ -94,6 +94,19 @@ class HighflyTakeoverTests(unittest.TestCase):
         self.assertNotIn('rel="canonical"', modified)
         self.assertEqual(modified, p.stage_brand_html(modified))
 
+    def test_untracked_reference_files_are_not_migrated_as_mit_code(self):
+        with tempfile.TemporaryDirectory() as folder:
+            original, stage, archive, out = self.make_world(Path(folder))
+            (original / ".git").mkdir()
+            missing = {"missingCodeFiles": ["src/game.ts"]}
+            completed = type("GitStatus", (), {"returncode": 1})()
+            with patch.object(p.p14, "code_inventory", return_value=missing), patch.object(
+                    p.subprocess, "run", return_value=completed) as git:
+                selected = p.missing_code(original, stage)
+            self.assertEqual(selected, [])
+            self.assertEqual(git.call_count, 1)
+            self.assertFalse((stage / "src/game.ts").exists())
+
     def test_generated_status_file_excluded_and_real_code_preserved(self):
         with tempfile.TemporaryDirectory() as folder:
             original, stage, archive, out = self.make_world(Path(folder))
