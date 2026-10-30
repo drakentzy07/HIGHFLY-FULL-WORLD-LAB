@@ -53,3 +53,15 @@ const silent=originalSfx.slice(0,start)+
   "export type SfxId = string;\n";
 writeFileSync(sfx,silent);
 console.log('SFX replaced with empty manifest: audio system intact, no licensed recordings downloaded.');
+
+// Vite's original i18n optimization reads dist/.vite/manifest.json during
+// closeBundle before this external Pages build has emitted that file.
+// Disable only this optional locale-preload optimization; the normal dynamic
+// locale loaders and translations remain in the MIT game client.
+const viteConfig=path.join(project,'vite.config.ts');
+let viteSource=readFileSync(viteConfig,'utf8');
+if(!viteSource.includes('    i18nModulepreloadPlugin(),'))
+  throw Error('UPSTREAM_I18N_VITE_PLUGIN_MOVED');
+viteSource=viteSource.replace('    i18nModulepreloadPlugin(),',
+ '    // HIGHFLY static Pages trial: optional i18n preload disabled (manifest timing).');
+writeFileSync(viteConfig,viteSource);
