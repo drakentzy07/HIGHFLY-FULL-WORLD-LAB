@@ -78,6 +78,17 @@ class P29Tests(unittest.TestCase):
             path.write_bytes(b"\xabKTX 20\xbb\r\n\x1a\n"+b"\0"*32)
             self.assertTrue(p29.binary_valid(path))
     
+    def test_actual_manifest_npc_paths_and_paladin_preserved(self):
+        self.assertEqual(p29.ACTOR_PROBES["npc_knight"],
+                         "models/chars/players/knight.glb")
+        self.assertEqual(p29.ACTOR_PROBES["npc_reliquary_paladin"],
+                         "models/chars/players/paladin.glb")
+        self.assertEqual(p29.NPC_ROLE_BASE_RIGS["reliquary_keeper"],
+                         "models/chars/players/paladin.glb")
+        self.assertEqual(p29.ACTOR_PROBES["npc_herbalist_druid"],
+                         "models/chars/players/druid.glb")
+        self.assertEqual(len(p29.ACTOR_PROBES),9)
+
     def test_actor_glb_file_presence_never_claims_visible_character(self):
         self.assertGreater(len(p29.ACTOR_PROBES),4)
         self.assertIn("npc_modular_warrior",p29.ACTOR_PROBES)
