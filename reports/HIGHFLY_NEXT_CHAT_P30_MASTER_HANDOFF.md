@@ -39,6 +39,15 @@ Salida en `.workspace/reports/highfly-p30-master/`:
 - `P30_SIM_NPC_MOBS_ITEMS_LOOT_QUESTS.csv` — NPC, mobs, quests, ítems, coords literales y nombres. Mapear casos calculados manualmente.
 - `P30_EVERY_SOURCE_SYSTEM.csv` — módulos reales de simulación, render, interacciones, menús y pipelines.
 
+**Buscar cualquier entidad del inventario cuando finalice la auditoría:**
+
+```bash
+python3 scripts/highfly_p30_find.py brother_halven
+python3 scripts/highfly_p30_find.py paladin.glb
+python3 scripts/highfly_p30_find.py wolf
+python3 scripts/highfly_p30_find.py training_dummy
+```
+
 **P30 es una auditoría ESTÁTICA y READ ONLY**. No demuestra todos los spawns de runtime, los equipos con nombres dinámicos, compatibilidad de rigs o licencia de un archivo no registrado. Da pista exacta cuando existe y señala lo no resuelto; jamás inventar un match visual ni dar el mundo como 100% auditado sin pruebas.
 
 ## Primer comando en el chat nuevo
