@@ -488,6 +488,12 @@ def rollback_applied(installed:list[dict])->list[str]:
     return restored
 
 
+def p23_is_temporary_source(url:str,sha:str)->bool:
+    """Count REAL surviving P22 geometries, including after a P26 import."""
+    path=STAGE/"public"/url.lstrip("/")
+    return is_p22_file(path,sha)
+
+
 def status_after(installed:list[dict]):
     counters=Counter()
     errors=[]
@@ -563,8 +569,9 @@ def run(apply:bool=False,max_models:int=249):
             "installed":installed,"bundledStatuses":result,"bundleErrors":errors,
             "buildExitCode":build,"buildException":build_exception,
             "rollbackPaths":rollback_paths,"rollbackPerformed":bool(rollback_paths),
-            "remainingP22ProceduralAfterApply":249-sum(
-                x["path"].endswith(".glb") for x in installed) if apply and not rollback_paths else 249,
+            "remainingP22ProceduralAfterApply":sum(
+                p23_is_temporary_source(url,sha)
+                for url,sha in provisional.items()),
             "items":rows,
             "followup":"Review source scales, orientation, render/collision, mobile performance, and world entry."}
         OUTPUT.mkdir(parents=True,exist_ok=True)
