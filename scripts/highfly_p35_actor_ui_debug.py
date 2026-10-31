@@ -65,7 +65,7 @@ def prepare(files):
         "    // "+MARK+": actor created or skipped; one record per view attempt.\n"
         "    if (e.kind === 'npc' && typeof window !== 'undefined') {\n"
         "      const p = (window as unknown as {__highflyP35?: {record: (k: string,d: Record<string, unknown>) => void}}).__highflyP35;\n"
-        "      p?.record('npc_view_attempt',{id:e.id,templateId:e.templateId,name:e.name,built:!!view,x:e.pos.x,z:e.pos.z});\n"
+        "      p?.record('npc_view_attempt',{id:e.id,templateId:e.templateId,name:e.name,built:!!view,\n        hasVisual:!!view?.visual, rootVisible:view?.visual?.root.visible ?? null,\n        rootChildren:view?.visual?.root.children.length ?? null, x:e.pos.x,y:e.pos.y,z:e.pos.z});\n"
         "    }\n"
         "    if (!view) return;\n    const kind = viewBuildClass",
         'renderer')
