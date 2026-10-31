@@ -118,6 +118,29 @@ def outspec_index(reference:Path)->dict[str,list[dict]]:
             })
     return dict(by_out)
 
+def compare_browser_captures(first:list[str],second:list[str])->dict:
+    """Keep all observations. Lazy-loading can reveal paths only in probe #2.
+
+    Do NOT silently assume a later smaller failure list is a subset of an
+    earlier one: different scenes/screens may load different assets.
+    """
+    if len(set(first))!=len(first) or len(set(second))!=len(second):
+        raise RuntimeError("P25_DUPLICATE_PATHS_IN_CAPTURE")
+    earlier=set(first)
+    newer=set(second)
+    union=first+[x for x in second if x not in earlier]
+    return {
+        "firstCount":len(first),
+        "secondCount":len(second),
+        "overlapCount":len(earlier & newer),
+        "firstOnlyCount":len(earlier-newer),
+        "newInSecondCount":len(newer-earlier),
+        "newInSecondPaths":[x for x in second if x not in earlier],
+        "uniqueCount":len(union),
+        "union":union,
+    }
+
+
 def source_stem(src:str)->str:
     name=PurePosixPath(src.replace("\\","/")).name
     while Path(name).suffix.lower() in ALLOWED_EXT and Path(name).suffix:
@@ -226,8 +249,11 @@ def audit(archive:Path=KAYKIT,external:Path=OTHER_PACKS):
         raise RuntimeError("P25_EXTERNAL_LIBRARY_MUST_BE_PRIVATE")
     user_314=from_capture(RUNTIME_314,314)
     user_266=from_capture(RUNTIME_266,266)
-    if not set(user_266).issubset(user_314):
-        raise RuntimeError("P25_RUNTIME_CAPTURES_INCONSISTENT")
+    # Runtime probes are independent snapshots of a lazy-loaded RPG world.
+    # New areas/screens can request NEW URLs in the second capture. This is
+    # normal, not corruption: compare both, retain the complete UNION.
+    comparison=compare_browser_captures(user_314,user_266)
+    runtime_union=comparison["union"]
     specs=outspec_index(ORIGINAL)
     credits=credited(ORIGINAL)
     library,model_count,source_counts=source_candidate_index(external,archive)
@@ -237,7 +263,7 @@ def audit(archive:Path=KAYKIT,external:Path=OTHER_PACKS):
     p21_doc=json.loads(p23.P21_REPORT.read_text(encoding="utf8"))
     p21_imports={x["path"]:x for x in p21_doc.get("installed",[])}
     rows=[]
-    for url in user_314:
+    for url in runtime_union:
         mapped=specs.get(url,[])
         match=match_sources(mapped,url,library,credits)
         stage=STAGE/"public"/url.lstrip("/")
@@ -274,6 +300,9 @@ def audit(archive:Path=KAYKIT,external:Path=OTHER_PACKS):
         "licenseDocumentationChecked":credits,
         "sourcePolicy":"KayKit SOURCE V7 only; other providers CC0 verified individually; no project-only import",
         "capturedOriginal":314,"capturedAfterP21":266,
+        "uniqueRuntimePathsAnalyzed":len(runtime_union),
+        "runtimeProbeComparison":{
+            key:value for key,value in comparison.items() if key!="union"},
         "runtimeUrlsWithConversionSpecs":sum(bool(r["upstreamSpecPaths"]) for r in rows),
         "exactSourceIdentifierCandidatesInLocalLibrary":status.get("LOCAL_EXACT_SOURCE_BASENAME_CANDIDATE_REVIEW",0),
         "originalSpecOutputCount":len(specs),
@@ -312,7 +341,9 @@ def audit(archive:Path=KAYKIT,external:Path=OTHER_PACKS):
                 "matchedLocalFiles":[x["file"] for x in item["matched"]]
                 }.items()})
     print("[HIGHFLY] P25 AUDIT: "+json.dumps({
-        "runtimePaths":314,
+        "runtimePaths":len(runtime_union),
+        "overlapBetweenProbes":comparison["overlapCount"],
+        "newInSecondProbe":comparison["newInSecondCount"],
         "historicalP22ModelsCreated":len(p22_temps),
         "p22TemporaryModelsStillPresent":states.get("P22_TEMP_PROCEDURAL",0),
         "specOutputPaths":len(specs),
