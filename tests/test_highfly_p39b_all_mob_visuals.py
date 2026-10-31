@@ -27,11 +27,11 @@ class P39BTests(unittest.TestCase):
     def test_parses_all_mob_keys_and_donors(self):
         sample=(
           "  mob_wolf: {\n"
-          "    url: \u0060\${CREATURES}/wolf.glb\u0060,\n"
-          "    animUrls: [\u0060\${CREATURES}/wolf_hit.glb\u0060],\n"
+          "    url: \u0060${CREATURES}/wolf.glb\u0060,\n"
+          "    animUrls: [\u0060${CREATURES}/wolf_hit.glb\u0060],\n"
           "  },\n"
           "  mob_crab: {\n"
-          "    url: \u0060\${CREATURES}/crabenemy.glb\u0060,\n"
+          "    url: \u0060${CREATURES}/crabenemy.glb\u0060,\n"
           "  },\n"
           "  mob_skeleton: {\n"
           "    url: \u0060models/chars/enemies/skeleton_warrior.glb\u0060,\n"
