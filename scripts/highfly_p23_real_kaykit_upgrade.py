@@ -139,12 +139,23 @@ def zip_index(zipfile_obj:zipfile.ZipFile):
             continue
         if not safe_zip_name(filename) or "gltf" not in [x.lower() for x in p.parts]:
             continue
-        packs=[part for part in p.parts if part.startswith("KayKit ")]
+        # Each SOURCE pack is its own directory. The archive wrapper
+        # "KayKit Complete V7" is NOT a licensed pack identity! Restrict the
+        # search to directories strictly above Assets/gltf/<asset>.gltf and
+        # reject any "Complete"/"Collection" wrapper. A foreign pack nested
+        # inside the ZIP must not inherit the wrapper's KayKit branding.
+        packs=[
+            part for part in p.parts[:-3]
+            if part.startswith("KayKit ")
+            and not re.search(r"\\b(?:complete|collection)\\b",part,re.IGNORECASE)
+        ]
         if not packs:
             continue
+        # Deepest individual KayKit source pack; supports a pack at ZIP root,
+        # plus standard <root>/KayKit <pack>/Assets/gltf/ archives.
         pack=packs[-1]
-        # The complete KayKit collection is user-owned and this ingestion
-        # targets its published CC0 packs only, never unrelated zip members.
+        # Only the user's verified KayKit Complete source archive is accepted.
+        # An arbitrary parent directory is never sufficient provenance.
         indexed[p.stem.casefold()].append({
             "member":filename,"pack":pack,"stem":p.stem.casefold(),
             "source":"USER_OWNED_KAYKIT_COMPLETE"})
