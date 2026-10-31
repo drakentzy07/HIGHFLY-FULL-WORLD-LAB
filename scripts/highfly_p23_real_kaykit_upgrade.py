@@ -2,8 +2,9 @@
 """HIGHFLY P23: real KayKit/CC0 pack art over P22 temporary procedural meshes.
 
 No 'looks somewhat similar' replacements: semantic/name match EXCLUSIVELY
-inside the user's KayKit COMPLETE SOURCE V7 archive. The old free KayKit
-assets inherited from ClaudeCraft are prohibited as import sources.
+inside the user's KayKit COMPLETE SOURCE V7 archive, with independently
+verified NON-KayKit CC0 providers (Quaternius, Kenney, ambientCG, Poly Haven).
+Old free KayKit inherited from ClaudeCraft is prohibited as an import source.
 Never takes project-only or restricted ClaudeCraft media. Preserves the RPG.
 Protects authored P8 files, does not touch characters, mounts, ports/entrances
 with functional geometry, or upstream source code.
@@ -232,7 +233,11 @@ def p22_provisional_source():
 
 
 def staged_proof():
-    """Optional proven CC0 assets already loaded in stage by earlier phases."""
+    """Reuse ONLY independently proven NON-KayKit CC0 in the existing stage.
+
+    KayKit from earlier FREE stages is excluded: V7 SOURCE is now its
+    sole origin. Other credited CC0 providers remain eligible.
+    """
     sources={}
     def add(path,sha,origin):
         if not p21.safe_asset_path(path):
@@ -240,21 +245,13 @@ def staged_proof():
         s=STAGE/"public"/path.lstrip("/")
         if s.is_file() and not s.is_symlink() and fingerprint(s)==sha and p21.check_binary(s,path):
             sources[path]={"origin":origin,"sha256":sha}
-    if P8_REPORT.is_file():
-        doc=json.loads(P8_REPORT.read_text(encoding="utf8"))
-        for entry in doc.get("buildings",[]):
-            if entry.get("publicUrl") and entry.get("glbSha256"):
-                add(entry["publicUrl"],entry["glbSha256"],"USER_OWNED_KAYKIT_P8")
-    if P12_REPORT.is_file():
-        doc=json.loads(P12_REPORT.read_text(encoding="utf8"))
-        for entry in doc.get("imported",[]):
-            if entry.get("target") and entry.get("sha256"):
-                add("/"+entry["target"].lstrip("/"),entry["sha256"],"USER_OWNED_KAYKIT_P12")
     if P21_REPORT.is_file():
         doc=json.loads(P21_REPORT.read_text(encoding="utf8"))
         for entry in doc.get("installed",[]):
-            if entry.get("provenance","").startswith("CC0_"):
-                add(entry["path"],entry["sha256"],"PROVEN_PINNED_CC0_P21")
+            prov=entry.get("provenance","")
+            if prov in ("CC0_QUATERNIUS","CC0_KENNEY","CC0_AMBIENTCG",
+                        "CC0_POLYHAVEN"):
+                add(entry["path"],entry["sha256"],prov)
     return sources
 
 
@@ -332,7 +329,12 @@ def paths_to_plan(index:dict,proof:dict,provisional:dict):
         row={"path":url,"originalP22Sha256":sha}
         if is_p22_file(target,sha):
             row["status"]="P22_PROVISIONAL_PRESENT"
-            match=exact_stage_match(url,proof) or match_archive(url,index)
+            kaykit_match=match_archive(url,index)
+            # Prefer the owned SOURCE V7 exact/curated asset.
+            # If no unique V7 candidate, use only exact-stem proven non-KayKit CC0.
+            nonkay=exact_stage_match(url,proof)
+            match=(kaykit_match if kaykit_match["method"]=="REPLACE_WITH_OWNED_KAYKIT"
+                   else nonkay or kaykit_match)
             row.update(match)
         elif target.is_file() and not target.is_symlink() and p21.check_binary(target,url):
             row.update({"status":"TARGET_MODIFIED_AFTER_P22","method":"DO_NOT_OVERWRITE_EXISTING"})
@@ -505,10 +507,10 @@ def run(apply:bool=False,max_models:int=249):
     p9.preflight(REFERENCE,STAGE,p9.REPORT)
     p12.validate(REFERENCE,STAGE,ARCHIVE,OUTPUT)
     provisional=p22_provisional_source()
-    # Exclusive authority: the new owned SOURCE archive. P8/P12/P21 staged
-    # models are NOT alternative KayKit source libraries: they may originate
-    # from older FREE releases and must be migrated separately, not propagated.
-    proof={}
+    # KayKit exclusively from owned SOURCE V7. Independently proven
+    # non-KayKit CC0 (Quaternius, Kenney, ambientCG, Poly Haven) may be reused.
+    # P8/P12/old P21 KayKit not copied.
+    proof=staged_proof()
     legacy=legacy_kaykit_inventory()
     with zipfile.ZipFile(ARCHIVE) as z:
         table,index=zip_index(z)
@@ -542,11 +544,12 @@ def run(apply:bool=False,max_models:int=249):
             "timestampUtc":datetime.now(timezone.utc).isoformat(),
             "sourceArchive":str(ARCHIVE),
             "archiveGltfCandidates":sum(map(len,index.values())),
-            "provenStageCC0Assets":0,
+            "provenStageNonKaykitCC0Assets":len(proof),
+            "stageNonKaykitCC0Origins":dict(Counter(x["origin"] for x in proof.values())),
             "legacyKaykitFromEarlierStages":legacy,
             "sourcePacksIndexed":source_packs,
             "p22TemporaryModels":len(provisional),
-            "sourceAndRightsPolicy":"EXCLUSIVE_USER_OWNED_KAYKIT_COMPLETE_SOURCE_V7; NO_OLD_FREE_KAYKIT_COPY",
+            "sourceAndRightsPolicy":"KAYKIT_ONLY_SOURCE_V7_PLUS_VERIFIED_NONKAYKIT_CC0_QUATERNIUS_KENNEY_AMBIENTCG_POLYHAVEN",
             "noClaudeCraftRestrictedOrProjectMediaCopied":True,
             "rpgSimulationCodeModified":False,
             "gameplayVerified":False,
@@ -571,6 +574,7 @@ def run(apply:bool=False,max_models:int=249):
                  "kaykitZipModelsIndexed":report["archiveGltfCandidates"],
                  "kaykitSourcePacks":len(source_packs),
                  "legacyKaykitFilesIdentified":legacy["exactP21ImportedCount"],
+                 "nonKaykitCC0ModelsEligible":len(proof),
                  "methods":methods,"realPackModelsInstalled":sum(x["path"].endswith(".glb") for x in installed),
                  "loadingImagesInstalled":sum(x["path"].endswith(".webp") for x in installed),
                  "remainingP22Procedural":report["remainingP22ProceduralAfterApply"],
