@@ -109,14 +109,21 @@ def patch_sources(sources: dict[str, str]) -> dict[str, str]:
     if any(MARK in v for v in sources.values()):
         raise RuntimeError("P38_ALREADY_APPLIED")
     media = sources[FILES[0]]
-    media = replace_once(media, "export function assetUrl(url: string): string {",
-                         MEDIA_PATCH + "export function assetUrl(url: string): string {",
-                         "media-header")
-    media = replace_once(media, "  const logical = logicalPath(url);\n  if (import.meta.env.DEV)",
-                         "  const logical = logicalPath(url);\n"
-                         "  if (HIGHFLY_P38_DIRECT_CC0_MEDIA.has(logical)) return '/' + logical;\n"
-                         "  if (import.meta.env.DEV)",
-                         "media-direct-route")
+    # The staged HIGHFLY media.ts is not necessarily identical to upstream.
+    # Inject a guarded direct-public route at the function ENTRY; preserve
+    # the entire existing resolver regardless of its DEV/PROD implementation.
+    # A previous implementation required two adjacent source lines and failed
+    # with P38_SOURCE_ANCHOR_DRIFT media-direct-route count=0.
+    media = replace_once(
+        media,
+        "export function assetUrl(url: string): string {",
+        MEDIA_PATCH + "export function assetUrl(url: string): string {\n"
+        "  // HIGHFLY_P38_CC0_NPC_PRELOAD: bypass stale /media/hash URLs.\n"
+        "  const highflyP38Logical = url.replace(/^\\/+/, '');\n"
+        "  if (HIGHFLY_P38_DIRECT_CC0_MEDIA.has(highflyP38Logical))\n"
+        "    return '/' + highflyP38Logical;\n",
+        "media-function-entry",
+    )
     assets = sources[FILES[1]]
     assets = replace_once(assets, "function resolvedGltf(url: string): GLTF {",
                           ASSETS_PATCH + "function resolvedGltf(url: string): GLTF {",
