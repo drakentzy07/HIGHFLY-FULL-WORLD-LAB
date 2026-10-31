@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """HIGHFLY P23: real KayKit/CC0 pack art over P22 temporary procedural meshes.
 
-No 'looks somewhat similar' replacements: semantic/name match in the user's
-real KayKit COMPLETE archive (or proven imported CC0 stage assets) only.
+No 'looks somewhat similar' replacements: semantic/name match EXCLUSIVELY
+inside the user's KayKit COMPLETE SOURCE V7 archive. The old free KayKit
+assets inherited from ClaudeCraft are prohibited as import sources.
 Never takes project-only or restricted ClaudeCraft media. Preserves the RPG.
 Protects authored P8 files, does not touch characters, mounts, ports/entrances
 with functional geometry, or upstream source code.
@@ -144,10 +145,13 @@ def zip_index(zipfile_obj:zipfile.ZipFile):
         # search to directories strictly above Assets/gltf/<asset>.gltf and
         # reject any "Complete"/"Collection" wrapper. A foreign pack nested
         # inside the ZIP must not inherit the wrapper's KayKit branding.
+        if len(p.parts)<4 or tuple(part.casefold() for part in p.parts[-3:-1])!=("assets","gltf"):
+            continue
         packs=[
             part for part in p.parts[:-3]
-            if part.startswith("KayKit ")
+            if part.casefold().startswith("kaykit ")
             and "complete" not in part.casefold() and "collection" not in part.casefold()
+            and not re.search(r"(^|[ _-])(free|demo|lite|legacy|old)([ _-]|$)",part,re.IGNORECASE)
         ]
         if not packs:
             continue
@@ -158,7 +162,7 @@ def zip_index(zipfile_obj:zipfile.ZipFile):
         # An arbitrary parent directory is never sufficient provenance.
         indexed[p.stem.casefold()].append({
             "member":filename,"pack":pack,"stem":p.stem.casefold(),
-            "source":"USER_OWNED_KAYKIT_COMPLETE"})
+            "source":"USER_OWNED_KAYKIT_COMPLETE_SOURCE_V7"})
     return table,indexed
 
 
@@ -252,6 +256,29 @@ def staged_proof():
             if entry.get("provenance","").startswith("CC0_"):
                 add(entry["path"],entry["sha256"],"PROVEN_PINNED_CC0_P21")
     return sources
+
+
+def legacy_kaykit_inventory()->dict:
+    """Document older imported third-party KayKit bytes; do not remove active game assets blindly."""
+    rows=[]
+    if P21_REPORT.is_file():
+        report=json.loads(P21_REPORT.read_text(encoding="utf8"))
+        for item in report.get("installed",[]):
+            if item.get("provenance")!="CC0_KAYKIT":
+                continue
+            url=item.get("path")
+            sha=item.get("sha256")
+            if not p21.safe_asset_path(url) or not isinstance(sha,str):
+                continue
+            target=STAGE/"public"/url.lstrip("/")
+            status=("EXACT_OLD_KAYKIT_PRESENT" if target.is_file() and not target.is_symlink()
+                    and fingerprint(target)==sha else "ALREADY_CHANGED_OR_ABSENT")
+            rows.append({"path":url,"source":"CLAUDECRAFT_PREVIOUS_FREE_CC0",
+                         "status":status,"sha256":sha})
+    return {"exactP21ImportedCount":len(rows),
+            "stillOldAndActiveCount":sum(x["status"]=="EXACT_OLD_KAYKIT_PRESENT" for x in rows),
+            "note":"Tracked for safe replacement from V7 SOURCE; no unverified media deletion or blind import.",
+            "items":rows}
 
 
 def exact_stage_match(path:str,proof:dict)->dict|None:
@@ -478,9 +505,16 @@ def run(apply:bool=False,max_models:int=249):
     p9.preflight(REFERENCE,STAGE,p9.REPORT)
     p12.validate(REFERENCE,STAGE,ARCHIVE,OUTPUT)
     provisional=p22_provisional_source()
-    proof=staged_proof()
+    # Exclusive authority: the new owned SOURCE archive. P8/P12/P21 staged
+    # models are NOT alternative KayKit source libraries: they may originate
+    # from older FREE releases and must be migrated separately, not propagated.
+    proof={}
+    legacy=legacy_kaykit_inventory()
     with zipfile.ZipFile(ARCHIVE) as z:
         table,index=zip_index(z)
+        source_packs=sorted({model["pack"] for options in index.values() for model in options})
+        if len(source_packs)<2 or sum(map(len,index.values()))<10:
+            raise RuntimeError("P23_NOT_A_FULL_KAYKIT_SOURCE_ARCHIVE: validate owned V7 ZIP and individual pack directories")
         rows=paths_to_plan(index,proof,provisional)
         methods=dict(Counter(row["method"] for row in rows))
         to_image=[url for url in REPAIR_IMAGES if not (STAGE/"public"/url.lstrip("/")).exists()]
@@ -508,9 +542,11 @@ def run(apply:bool=False,max_models:int=249):
             "timestampUtc":datetime.now(timezone.utc).isoformat(),
             "sourceArchive":str(ARCHIVE),
             "archiveGltfCandidates":sum(map(len,index.values())),
-            "provenStageCC0Assets":len(proof),
+            "provenStageCC0Assets":0,
+            "legacyKaykitFromEarlierStages":legacy,
+            "sourcePacksIndexed":source_packs,
             "p22TemporaryModels":len(provisional),
-            "sourceAndRightsPolicy":"USER_OWNED_KAYKIT_CC0_AND_PROVEN_IMPORTED_CC0_ONLY",
+            "sourceAndRightsPolicy":"EXCLUSIVE_USER_OWNED_KAYKIT_COMPLETE_SOURCE_V7; NO_OLD_FREE_KAYKIT_COPY",
             "noClaudeCraftRestrictedOrProjectMediaCopied":True,
             "rpgSimulationCodeModified":False,
             "gameplayVerified":False,
@@ -533,6 +569,8 @@ def run(apply:bool=False,max_models:int=249):
         file.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
         summary={"mode":report["mode"],"p22TemporaryModels":len(provisional),
                  "kaykitZipModelsIndexed":report["archiveGltfCandidates"],
+                 "kaykitSourcePacks":len(source_packs),
+                 "legacyKaykitFilesIdentified":legacy["exactP21ImportedCount"],
                  "methods":methods,"realPackModelsInstalled":sum(x["path"].endswith(".glb") for x in installed),
                  "loadingImagesInstalled":sum(x["path"].endswith(".webp") for x in installed),
                  "remainingP22Procedural":report["remainingP22ProceduralAfterApply"],
