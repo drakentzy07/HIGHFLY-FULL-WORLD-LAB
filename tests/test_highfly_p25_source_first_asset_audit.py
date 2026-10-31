@@ -12,6 +12,31 @@ import highfly_p25_source_first_asset_audit as p25
 
 
 class P25ProvenanceTests(unittest.TestCase):
+    def test_real_p20_p21_probes_are_independent_and_have_316_union_urls(self):
+        from pathlib import Path
+        project=Path(__file__).resolve().parents[1]
+        first=p25.from_capture(
+            project/"reports/highfly_p20_runtime_missing_paths.json",314)
+        second=p25.from_capture(
+            project/"reports/highfly_p21_fresh_missing_266.json",266)
+        outcome=p25.compare_browser_captures(first,second)
+        self.assertEqual(outcome["overlapCount"],264)
+        self.assertEqual(outcome["firstOnlyCount"],50)
+        self.assertEqual(outcome["newInSecondCount"],2)
+        self.assertEqual(outcome["uniqueCount"],316)
+        self.assertEqual(set(outcome["newInSecondPaths"]),{
+            "/textures/loading/eastbrook-mine-duel.webp",
+            "/textures/loading/crystal-delve.webp"})
+
+    def test_browser_capture_merge_does_not_count_duplicate_urls_as_fixes(self):
+        result=p25.compare_browser_captures(["/models/a.glb","/models/b.glb"],
+                                            ["/models/b.glb","/models/c.glb"])
+        self.assertEqual(result["union"],[
+            "/models/a.glb","/models/b.glb","/models/c.glb"])
+        self.assertEqual(result["newInSecondCount"],1)
+        with self.assertRaises(RuntimeError):
+            p25.compare_browser_captures(["/models/a.glb","/models/a.glb"],[])
+
     def test_provider_identification_from_actual_raw_source_path(self):
         values={
             "tmp/asset_src/quaternius_village/Fantasy_House_1.glb":"Quaternius",
