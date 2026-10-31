@@ -192,3 +192,19 @@ python3 scripts/highfly_p38_npc_preload_and_dummy.py --apply
 python3 scripts/highfly_p9_private_build_smoke.py
 ```
 Verificar navegador: Odo ≠ Maren ≠ Pell, los nueve NPC tutorial visibles y `F Talk`; blanco de tiro en los camps de dummy, sus colisiones y contador de golpes; monitor P35 debe bajar errores `character asset not preloaded` de seis GLB. Puede persistir fallback si archivos GLB no son decodificables o precarga falla. No asegurar funcionalidad completa hasta resultado de usuario. Guardado offline e iconos siguen pendientes.
+
+## P38 HOTFIX — Codespaces 31 Oct 2026 17:52
+El usuario ejecutó la secuencia P38 original (rev `0daceb2`). Los tres unit tests pasaron, pero el **primer DRY_RUN falló antes de escribir el stage**, con `P38_SOURCE_ANCHOR_DRIFT media-direct-route count=0`. `media.ts` en el stage HIGHFLY no conserva dos líneas adyacentes idénticas al upstream. **No se aplicó P38, no corrió P9**; P37 sigue siendo la última compilación verde.
+
+Hotfix: `scripts/highfly_p38_npc_preload_and_dummy.py` inyecta la excepción para rutas directas KayKit CC0 al comienzo de `assetUrl()`, usando una única ancla `export function assetUrl(url: string): string {`, conservando intacto cualquier resolver HIGHFLY personalizado (no presupone `import.meta.env.DEV`). Test nuevo comprueba resolver personalizado y que se inyecta la ruta antes de sus decisiones. Commit(s): `690285b`, `54202e8`.
+
+**Siguiente comando** (P38 hotfix; sin P37):
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only && \
+python3 -m unittest discover -s tests -p 'test_highfly_p38_npc_preload_and_dummy.py' && \
+python3 scripts/highfly_p38_npc_preload_and_dummy.py && \
+python3 scripts/highfly_p38_npc_preload_and_dummy.py --apply && \
+python3 scripts/highfly_p9_private_build_smoke.py
+```
+Si falla otra ancla/source o falta el GLB original, el script aborta y debe investigarse, no se debe copiar recursos alternativos a ciegas. `--apply` solo corre después de dry-run correcto. No asegurar que NPC o dummy ya cambiaron visualmente sin navegador.
