@@ -62,9 +62,13 @@ def patch(x):
    "  try { await prepareCharacterUrl('models/creatures/wolf.glb'); }\n"
    "  catch (error) { console.warn('[HIGHFLY P44] wolf',error); }\n}\n"
    "export async function preloadHighflyCrabAssets(): Promise<void> {","wolf-loader")
- c=once(x[FILES[2]],"  'models/creatures/crab_ability_anims.glb',",
-   "  'models/creatures/crab_ability_anims.glb',\n"
-   "  // "+MARK+"\n  'models/creatures/wolf.glb',","media-wolf")
+ # P39B adds a second crab_ability_anims.glb row to the same set.
+ # Anchor the SET DECLARATION, not an asset that appears more than once.
+ # The P38 direct-public routing checks THIS set at runtime.
+ c=once(x[FILES[2]],"const HIGHFLY_P38_DIRECT_CC0_MEDIA = new Set([\n",
+   "const HIGHFLY_P38_DIRECT_CC0_MEDIA = new Set([\n"
+   "  // "+MARK+": original Quaternius wolf, already provenance-checked.\n"
+   "  'models/creatures/wolf.glb',\n","media-wolf-direct-cc0-set")
  d=once(x[FILES[3]],"  preloadHighflyCrabAssets,",
    "  preloadHighflyCrabAssets,\n  preloadHighflyWolf,","main-import")
  d=once(d,"  await preloadHighflyCrabAssets();",
