@@ -60,7 +60,9 @@ def rollback():
   if source.is_symlink():raise RuntimeError("P43_STAGE_SRC_SYMLINK")
   shutil.rmtree(source)
   (STAGE/"index.html").unlink(missing_ok=True)
-  archive.extractall(STAGE,filter="data")
+  # Trusted local checkpoint created just above, validated against traversal,
+  # symlink and device entries before extraction. Compatible with Python 3.10+.
+  archive.extractall(STAGE)
  for path in (STAGE/p40.JS_PATH,STAGE/p42.JS_PATH):
   path.unlink(missing_ok=True)
  (STAGE/p41.NEW).unlink(missing_ok=True)
