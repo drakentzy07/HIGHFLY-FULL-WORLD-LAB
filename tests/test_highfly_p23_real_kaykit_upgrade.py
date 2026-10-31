@@ -160,6 +160,21 @@ class P23OwnedArtTests(unittest.TestCase):
             target.write_bytes(target.read_bytes()+b"NOT_ORIGINAL")
             self.assertFalse(p23.is_p22_file(target,good))
 
+    def test_surviving_p22_count_uses_live_files_not_historical_subtraction(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            stage=Path(temp)
+            p=stage/"public/models/props/fallback_crate.glb"
+            p.parent.mkdir(parents=True)
+            p22.build_model("/models/props/fallback_crate.glb",p)
+            oldhash=p23.fingerprint(p)
+            with patch.object(p23,"STAGE",stage):
+                self.assertTrue(p23.p23_is_temporary_source(
+                    "/models/props/fallback_crate.glb",oldhash))
+                p.write_bytes(p.read_bytes()+b"changed")
+                self.assertFalse(p23.p23_is_temporary_source(
+                    "/models/props/fallback_crate.glb",oldhash))
+
     def test_loading_screen_art_is_original_and_semantically_named(self):
         for url,title in (
             ("/textures/loading/fenbridge-rain-skiff.webp","FENBRIDGE"),
