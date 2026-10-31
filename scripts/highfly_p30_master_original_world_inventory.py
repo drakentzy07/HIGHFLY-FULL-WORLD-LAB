@@ -139,6 +139,85 @@ def npc_inventory():
                         "individualLook":look,"gameplayIdentityChanged":False,
                         "location":"DYNAMIC_LOOK_NEEDS_SPAWN_LOOKUP"})
     return npc,len(ids),len(looks),len(visual)
+CONTENT_TYPES={"NpcDef":"NPC","MobTemplate":"MONSTERS",
+               "ItemDef":"ITEMS_LOOT_EQUIPMENT","QuestDef":"QUESTS"}
+RECORD_EXPORT=re.compile(
+    r"export const ([A-Z_0-9]+):\s*Record<string,\s*(NpcDef|MobTemplate|ItemDef|QuestDef)>\s*=\s*\{\s*\n")
+RECORD_KEY=re.compile(r"^  (?:'([a-zA-Z0-9_]+)'|([a-zA-Z0-9_]+)):\s*\{",re.M)
+
+def content_records_from_source(raw,rel):
+    """Read literal exported typed data records with id, name, coords and
+    quest/loot association fields. This is static syntax: computed/spread
+    definitions are flagged separately rather than invented."""
+    rows=[]
+    for declared in RECORD_EXPORT.finditer(raw):
+        name,typename=declared.group(1),declared.group(2)
+        tail=raw[declared.end():]
+        end=re.search(r"^};\s*$",tail,re.M)
+        if end is None:continue
+        body=tail[:end.start()]
+        keys=list(RECORD_KEY.finditer(body))
+        for i,m in enumerate(keys):
+            item_id=m.group(1) or m.group(2)
+            snippet=body[m.end():keys[i+1].start() if i+1<len(keys) else len(body)]
+            def field(rx):
+                match=re.search(rx,snippet,re.M)
+                return match.group(1) if match else None
+            name_field=field(r"^\s{4}name:\s*'([^']+)'")
+            family=field(r"^\s{4}family:\s*'([^']+)'")
+            title=field(r"^\s{4}title:\s*'([^']+)'")
+            x=field(r"pos:\s*\{\s*x:\s*(-?\d+(?:\.\d+)?)")
+            z=field(r"pos:\s*\{[^\}]*z:\s*(-?\d+(?:\.\d+)?)")
+            q=re.search(r"\bquestIds:\s*\[([^\]]{0,1200})\]",snippet,re.S)
+            quests=re.findall(r"['\x22]([a-z0-9_]+)['\x22]",q.group(1)) if q else []
+            rows.append({
+                "kind":CONTENT_TYPES[typename],"simType":typename,
+                "sourceModule":rel,"exportedTable":name,
+                "id":item_id,"displayName":name_field,"title":title,
+                "family":family,"positionX":x,"positionZ":z,
+                "questIds":quests,"sourceStaticOnly":True
+            })
+    return rows
+
+def master_content_records(root):
+    files=sorted((root/"src/sim/content").rglob("*.ts"))
+    data=root/"src/sim/data.ts"
+    if data.is_file():files.append(data)
+    rows=[]
+    for file in files:
+        if not file.is_file() or file.is_symlink() or file.stat().st_size>4_000_000:continue
+        rel=file.relative_to(root).as_posix()
+        rows.extend(content_records_from_source(
+            file.read_text(encoding="utf8",errors="replace"),rel))
+    return rows
+
+def mob_visual_index(root):
+    manifest=(root/"src/render/characters/manifest.ts").read_text(encoding="utf8")
+    mobkey=ts_table(manifest,r"const MOB_KEYS:\s*Record<string,\s*string>")
+    family=ts_table(manifest,r"const FAMILY_KEYS:\s*Record<string,\s*string>")
+    named=dict(re.findall(r"^  ([a-z0-9_]+):\s*'(mob_[a-z0-9_]+)'",mobkey,re.M))
+    families=dict(re.findall(r"^  ([a-z0-9_]+):\s*'([a-z0-9_]+)'",family,re.M))
+    visual={}
+    for m in re.finditer(r"^  ((?:mob_|skel_)[a-z0-9_]+):\s*\{\s*\n(.*?)^  \},",
+                         manifest,re.M|re.S):
+        body=m.group(2)
+        model=re.search(r"^    url:\s*\x60([^\x60]+)\x60",body,re.M)
+        if model:
+            visual[m.group(1)]=expand(model.group(1))
+    return named,families,visual
+
+def content_classification(row):
+    """This is NOT a claim about an item's exact equipment rule."""
+    name=(row["id"]+" "+str(row["displayName"] or "")).lower()
+    result=[row["kind"]]
+    if row["kind"]=="ITEMS_LOOT_EQUIPMENT":
+        result.extend(["ITEMS","LOOT"])
+        if any(x in name for x in ("sword","axe","bow","spear","hammer","staff","dagger","weapon","mace")):
+            result.append("WEAPONS")
+        if any(x in name for x in ("armor","armour","robe","helm","boot","ring","shield","gauntlet","glove")):
+            result.append("ARMOR")
+    return list(dict.fromkeys(result))
+
 def credits_evidence(path,lines):
     needles=("public/"+path,path)
     return [{"creditsLine":i,"line":line[:700]} for i,line in enumerate(lines,1)
@@ -158,6 +237,25 @@ def run():
     credits=p25.credited(ORIGINAL)
     credit_lines=(ORIGINAL/"CREDITS.md").read_text(encoding="utf8").splitlines()
     npc,static_count,look_count,visual_count=npc_inventory()
+    sim_records=master_content_records(ORIGINAL)
+    by_id=defaultdict(list)
+    for record in sim_records:
+        by_id[(record["kind"],record["id"])].append(record)
+    for row in npc:
+        matches=by_id.get(("NPC",row["npcId"]),[])
+        row["simulationDefinitions"]=matches[:8]
+        # Real numeric coordinates ONLY when present in an original NPC record.
+        positions=[{"x":x["positionX"],"z":x["positionZ"],"source":x["sourceModule"]}
+                   for x in matches if x["positionX"] is not None and x["positionZ"] is not None]
+        row["verifiedOriginalStaticCoordinates"]=positions
+    mobnames,mobfamilies,mobvisuals=mob_visual_index(ORIGINAL)
+    for record in sim_records:
+        record["categories"]=content_classification(record)
+        if record["kind"]=="MONSTERS":
+            key=mobnames.get(record["id"]) or mobfamilies.get(record["family"]) or "mob_bandit"
+            record["originalMobVisualKey"]=key
+            record["originalModelUrl"]=mobvisuals.get(key)
+            record["modelMappingEvidence"]="STATIC_OVERRIDE_OR_FAMILY_FALLBACK_REVIEW"
     with zipfile.ZipFile(p23.ARCHIVE) as z:
         _,kaykit=p23.zip_index(z)
     temp={p.lstrip("/"):sha for p,sha in p23.p22_provisional_source().items()}
@@ -220,6 +318,8 @@ def run():
                                  else row.get(k) for k in fields})
     csvout("P30_ALL_MEDIA_AND_USAGE.csv",rows,list(rows[0]))
     csvout("P30_EVERY_NPC_AND_VISUAL.csv",npc,list(npc[0]))
+    csvout("P30_SIM_NPC_MOBS_ITEMS_LOOT_QUESTS.csv",sim_records,
+           list(sim_records[0]) if sim_records else ["kind","sourceModule","id"])
     csvout("P30_EVERY_SOURCE_SYSTEM.csv",
            [{"category":game_source_categories(name),
              "codePath":name,"stageSourcePresent":(STAGE/name).is_file(),"bytes":size}
@@ -234,6 +334,12 @@ def run():
         "codeFilesInspected":len(source_files),
         "npcIdMappings":static_count,"npcAuthoredLooks":look_count,
         "npcVisualArchetypes":visual_count,"npcRows":len(npc),
+        "originalContentEntityRecordsParsed":len(sim_records),
+        "originalContentByKind":dict(Counter(x["kind"] for x in sim_records)),
+        "npcsWithLiteralSourceCoordinates":sum(
+            bool(x["verifiedOriginalStaticCoordinates"]) for x in npc),
+        "mobsWithOriginalVisualModel":sum(
+            x.get("originalModelUrl") is not None for x in sim_records if x["kind"]=="MONSTERS"),
         "kaykitOwnedV7SourceModels":sum(map(len,kaykit.values())),
         "assetCategories":dict(roles),"assetActionStates":dict(status),
         "licenseEvidenceStates":dict(licences),
@@ -247,11 +353,15 @@ def run():
           "Provider credit plus src->out spec is an eligibility lead; unknown media not free under MIT.",
           "No replacement is authorized by filename similarity alone."],
         "outputs":["P30_ALL_MEDIA_AND_USAGE.csv","P30_EVERY_NPC_AND_VISUAL.csv",
+                   "P30_SIM_NPC_MOBS_ITEMS_LOOT_QUESTS.csv",
                    "P30_EVERY_SOURCE_SYSTEM.csv","P30_MASTER_SUMMARY.json"]}
     (OUT/"P30_MASTER_SUMMARY.json").write_text(json.dumps(summary,indent=2,ensure_ascii=False)+"\n",encoding="utf8")
     print("[HIGHFLY] P30 MASTER AUDIT: "+json.dumps({
        "mediaInOriginal":len(originals),"assetPathsAudited":len(media),
-       "npcRows":len(npc),"kaykitSourceModels":summary["kaykitOwnedV7SourceModels"],
+       "npcRows":len(npc),
+       "simulationRecords":len(sim_records),
+       "npcsWithCoordinates":summary["npcsWithLiteralSourceCoordinates"],
+       "kaykitSourceModels":summary["kaykitOwnedV7SourceModels"],
        "codeFiles":len(source_files),"categories":dict(roles),
        "actions":dict(status),"gameplayChanged":False},ensure_ascii=False))
     print("[HIGHFLY] P30 REPORT DIRECTORY: "+str(OUT))
