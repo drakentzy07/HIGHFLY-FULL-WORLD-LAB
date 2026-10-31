@@ -88,6 +88,9 @@ CSS=r"""
  border:1px solid #9c67dc!important;border-radius:16px!important;
  box-shadow:0 9px 35px #0009!important;box-sizing:border-box!important;
 }
+/* Keep the original view state machine authoritative. */
+#offline-select[hidden],#start-screen.hf-p46-entry #mode-select[hidden],
+#start-screen.hf-p46-entry .view-section[hidden] {display:none!important}
 #offline-select .auth-title {
  margin:0 0 9px!important;text-align:center!important;
  color:#f3d5ff!important;font:700 clamp(20px,2.3vw,28px)/1.3 Georgia,serif!important;
