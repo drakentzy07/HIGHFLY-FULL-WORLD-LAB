@@ -72,10 +72,10 @@ def mob_visual_dependencies(manifest:str)->dict[str,set[str]]:
     for hit in starts:
         end=next((v.start() for v in all_defs if v.start()>hit.start()),len(manifest))
         block=manifest[hit.end():end]
-        expanded=(block.replace("\${CREATURES}","models/creatures")
-                   .replace("\${CHARS}","models/chars")
-                   .replace("\${WEAPONS}","models/weapons")
-                   .replace("\${PLAYER_CHARS}","models/chars/players"))
+        expanded=(block.replace("${CREATURES}","models/creatures")
+                   .replace("${CHARS}","models/chars")
+                   .replace("${WEAPONS}","models/weapons")
+                   .replace("${PLAYER_CHARS}","models/chars/players"))
         refs=set(re.findall(
             r"models/(?:creatures|chars|weapons)/[A-Za-z0-9_./-]+\.glb",
             expanded,
