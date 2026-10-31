@@ -27,6 +27,7 @@ MEDIA={".glb",".gltf",".obj",".fbx",".png",".jpg",".jpeg",".webp",".ktx2",".hdr"
 ".exr",".ogg",".mp3",".wav",".flac",".woff",".woff2",".ttf",".svg",".bin",".basis",".mp4"}
 CODE={".ts",".tsx",".js",".mjs",".py",".json"}
 TOKENS=re.compile(r"(?<![A-Za-z0-9_./-])/?((?:models|textures|vfx|ui|audio|fonts|skybox|skyboxes|env|assets)/[A-Za-z0-9_./-]+)")
+NPC_KEY=re.compile(r"^  ([a-z0-9_]+):\s*'(npc_[a-z0-9_]+)'",re.M)
 def categories(path):
     s=path.casefold();n=PurePosixPath(s).name;result=[]
     def a(x):
@@ -95,7 +96,7 @@ def npc_inventory():
     manifest=(root/"manifest.ts").read_text(encoding="utf8")
     appearance=(root/"npc_looks.ts").read_text(encoding="utf8")
     table=ts_table(manifest,r"const NPC_KEYS:\s*Record<string,\s*string>")
-    ids=dict(re.findall(r"^  ([a-z0-9_]+):\s*'(npc_[a-z0-9_]+)'",table,re.M))
+    ids=dict(NPC_KEY.findall(table))
     if not ids:raise RuntimeError("P30_NPC_TABLE_COULD_NOT_BE_PARSED")
     visual={}
     for m in re.finditer(r"^  (npc_[a-z0-9_]+):\s*\{\s*\n(.*?)^  \},",manifest,re.M|re.S):
