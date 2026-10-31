@@ -154,3 +154,21 @@ Prioridades explícitas actualizadas:
 5. Iconos de bolsa, inventario, faroles/campana, traducción y menús premium.
 
 NO convertir P20 "19 fallos" en una promesa de mundo completo. NO eliminar P36 sin sustituto visible. NO publicar las imágenes/personajes del autor sin licencia individual.
+
+## P37 — variedad visual NPC con seis rigs CC0 y sin assets externos (31 Oct 2026)
+Tras **P36 confirmado en imágenes** (NPCs visibles pero todos parecidos a Warrior), la causa probable de fallback persistente es que los rigs alternativos `player_paladin` / `player_rogue` / `player_mage` exigen donantes de clips/armas ausentes aunque sus cuerpos GLB originales CC0 estén presentes. P37 no sustituye la funcionalidad RPG ni el Hunter Universal: crea seis visuales NPC de cuerpo fijo `highfly_npc_{knight,mage,rogue,barbarian,paladin,druid}`, basados en modelos `models/chars/players/*.glb` aprobados en P33, **sin `animUrls` externos ni `attach` faltantes**, con tint discreto según `Entity.color`, y los registra en el manifest para preload. Mapea explícitamente los nueve NPC del tutorial a roles aproximados (Odo→Druid, Maren/Rook→Knight, Wick→Mage, Finch/Bryn/Tam→Rogue, Pell→Barbarian, Nel→Druid) y también el resto de NPC del mundo según `NPC_KEYS`. El visual original individual y la configuración `npc_looks.ts` se conservan en código, pero estos nuevos cuerpos **no recrean peinados/ojos/rostros** del GLB modular no verificado. Respetar datos originales y reconstruir módulos propios después. **P36 queda intacto** como red de seguridad ante cualquier nuevo error.
+
+Nuevos `scripts/highfly_p37_npc_cc0_roles.py` y `tests/test_highfly_p37_npc_cc0_roles.py`. Se instalan solo en `.workspace/highfly-origin-stage-p0/src/render/characters/manifest.ts`, con dry-run y backup. Chequean ruta/cabecera de seis GLB, existencia de fallback P36/P34, anclas y escritura. No afectan scripts del repositorio original, simulación, misiones, clases, guardado ni publicación.
+
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_highfly_p37_npc_cc0_roles.py'
+python3 scripts/highfly_p37_npc_cc0_roles.py
+python3 scripts/highfly_p37_npc_cc0_roles.py --apply
+python3 scripts/highfly_p9_private_build_smoke.py
+```
+
+**Aún por validar desde navegador**: que distintos NPC usen rigs diferenciados, que sigan interactivos (F Talk, quests, vendor) y que los nueve tutoriales estén representados. Mantener botón P35 y descargar `HIGHFLY_P35_NPC_BOLSA_INVENTARIO.json` para examinar fallback y error interno si persisten clones. El muñeco del tutorial `training_dummy.glb` continúa faltando y su autorización es `With the project only`, no CC0; requiere sustituto licenciado. Guardado offline, inventario, iconos, decoración y editor Hunter siguen pendientes de corrección separada.
+
+Licencias: `appearance_customizer.ts`, `npc_looks.ts`, `modular.ts` son código MIT reutilizable conservando licencia; la biblioteca 3D `warrior_modular.glb` con cabellos/piezas particulares no adquiere CC0/MIT por estar en el repositorio. P37 utiliza los seis modelos KayKit CC0 acreditados y recuperados, **no** reutiliza esa biblioteca de geometría no verificada.
