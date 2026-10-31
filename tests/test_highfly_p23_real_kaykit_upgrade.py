@@ -100,6 +100,30 @@ class P23OwnedArtTests(unittest.TestCase):
             self.assertEqual(model["method"],"REPLACE_WITH_OWNED_KAYKIT")
             self.assertEqual(model["sourceZipMember"],index["anvil"][0]["member"])
 
+    def test_preserve_proven_quaternius_but_do_not_copy_old_kaykit(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            private=Path(temp)
+            public=private/"public/models"
+            (public/"foliage").mkdir(parents=True)
+            (public/"dungeon").mkdir(parents=True)
+            a=public/"foliage/fern.glb"
+            b=public/"dungeon/wall.glb"
+            p22.build_model("/models/foliage/fern.glb",a)
+            p22.build_model("/models/dungeon/wall.glb",b)
+            report=private/"P21.json"
+            report.write_text(json.dumps({"installed":[
+                {"path":"/models/foliage/fern.glb",
+                 "sha256":p23.fingerprint(a),"provenance":"CC0_QUATERNIUS"},
+                {"path":"/models/dungeon/wall.glb",
+                 "sha256":p23.fingerprint(b),"provenance":"CC0_KAYKIT"}
+            ]}))
+            with patch.object(p23,"STAGE",private), patch.object(p23,"P21_REPORT",report):
+                proof=p23.staged_proof()
+            self.assertIn("/models/foliage/fern.glb",proof)
+            self.assertNotIn("/models/dungeon/wall.glb",proof)
+            self.assertEqual(proof["/models/foliage/fern.glb"]["origin"],"CC0_QUATERNIUS")
+
     def test_never_replace_structural_contracts(self):
         paths=(
             "/models/mounts/valorsteed.glb",
