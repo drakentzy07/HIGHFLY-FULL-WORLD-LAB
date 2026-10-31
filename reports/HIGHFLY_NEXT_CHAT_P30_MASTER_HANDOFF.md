@@ -66,3 +66,13 @@ Pedir el resultado `[HIGHFLY] P30 MASTER AUDIT` y `[HIGHFLY] P29 AUDIT`. Si P30 
 
 **Próxima fase:** convertir P30 en matriz de cambios visuales 1:1 (NPC primero), con verificación de rigs/animaciones/texturas, luego dummies y VFX; después loot/armas/armaduras/monstruos, edificios y mundo. Preservar tabla y lógica sin tocarlas. Construcción privada y prueba de navegador tras cada lote.
 
+## P31: primer caso real CC0, Quaternius Wolf
+Tras P30: `wolf.glb` aparece como `SPEC_PROVIDER_CC0_REUSE_CANDIDATE` y `RESTORE_OR_REVIEW_MISSING_ASSET`. Confirmado en la fuente v0.44.7: `scripts/assets/specs/characters.json` contiene `tmp/asset_src/quaternius_creatures/Wolf.glb` → `models/creatures/wolf.glb`; `CREDITS.md` acredita criaturas animadas Quaternius CC0 1.0, redistribución Yes. No sustituir este lobo por KayKit.
+Se agregó `scripts/highfly_p31_cc0_wolf_restore.py` y 3 pruebas aisladas. **Dry-run predeterminado**, `--apply` restaura exclusivamente el archivo original a la misma ruta del stage privado, comprobando commit original, fuente exacta, crédito CC0, cabecera GLB e identidad SHA256; sin sobreescribir archivos existentes, sin cambiar gameplay ni desplegar. Los 3 tests pasaron en aislamiento local, **pendiente confirmar en Codespace**:
+```bash
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_highfly_p31_cc0_wolf_restore.py'
+python3 scripts/highfly_p31_cc0_wolf_restore.py
+python3 scripts/highfly_p31_cc0_wolf_restore.py --apply
+```
+Los siguientes lotes deberán usar un registro explícito de procedencia/licencia por recurso: ***nunca*** tratar todos los `SPEC_PROVIDER_CC0_REUSE_CANDIDATE` como autorizados sin inspección. P31 sirve como piloto para la restauración sistemática, no demuestra que el lobo ya aparezca en runtime.
