@@ -254,3 +254,22 @@ python3 scripts/highfly_p9_private_build_smoke.py
 ```
 
 Estado: código P39B subido; **NO tests aplicados en Codespace aún**, no prometer mundo entero reparado; aunque tests y build pasen, explorar tutorial (cangrejos), Eastbrook, bosque y mazmorras y confirmar animales realmente visibles con ataque/loot. Si P39B muestra muchos BLOCK, resolver sus licencias/modelos aparte con KayKit Complete CC0, sin personajes geométricos falsos. Los iconos de inventario (20 rutas únicas dañadas) y persistencia offline (original nunca persiste) son tareas **diferentes**, requieren código específico siguiente. Mantener versión P38 respaldada `.workspace/checkpoints/HIGHFLY-P38-VERDE-src.tar.gz` (35MB, *sólo código*).
+
+## P43 — P39B→P42 GRAN TEST INTEGRADO (31 Oct 2026, after P39B green)
+**Input user log:** P39B (already applied) 4/4 tests OK, 101 `mob_*` VisualDefs, 121 GLB dependencies, **24 approved/existing**, **97 blocked for unresolved or project-only provenance**, ZERO NEW FILES restored, and P9 Vite bundle GREEN. These 97 must NOT be called illegal by default, and P39B was a lazy-fetch code repair for 24 approved paths, not a universal visual fix. User requested combining P39B to P42 in one big test without repeated commands.
+
+**IMPLEMENTED in tracked GitHub scripts, but NOT yet run in Codespaces**:
+- `scripts/highfly_p40_icon_art.py` + test. 20 known P35 broken DOM-image references receive original, hand-authored vector SVG artwork (tunic, sword, buckler, 9 legacy class icons, currencies, rewards, procs, 3 skills); source .webp references remain and a local JS `img.onerror` falls back to SVG. No unlicensed CraftPix. Original illustrations are provisional, NOT final premium art, only 20 diagnosed paths.
+- `scripts/highfly_p41_offline_save.py` + test. Extends SimConfig with optional `offlineRestoreState`, forwards through offlineWorldConfig, uses the **original** `Sim.addPlayer({state})` load/migration path and `sim.serializeCharacter()` save. Same-origin localStorage versioned slot `highfly.origin.offline.v1` keyed by name, autosave 15sec, pagehide/hidden + manual GUARDAR/EXPORTAR JSON. Skips fresh Proving Shore teleport on resumed character, retains saved skin/modular appearance. *Not a full persistent server world*: save is player CharacterState, not every mob/environment transient. Browser persistence and quota must be tested; private-browsing or cleared site data can erase; export is recommended backup. No promise of cross-device sync. Does not change online mode.
+- `scripts/highfly_p42_spanish_hunter.py` + test. Spanish initial locale by changing `currentLanguage='es'` while preserving URL ?lang and stored language override. Hides old 8 class choices in offline menu, labels warrior presentation as `Cazador universal`, **keeps internal warrior** for RPG compatibility and *does not implement full modular face/hair editor yet*. NPC roles unchanged.
+- `scripts/highfly_p43_big_test.py` + test. Requires P39B/P39A/P36/P38 already applied. Runs P40, P41, P42 dry-run first, saves full current `src`+index.html checkpoint `.workspace/checkpoints/HIGHFLY-P39B-BEFORE-P43.tar.gz`, applies all 3, invokes **one** P9 private build, and attempts rollback to pre-P43 stage on any apply/build error. Reports `.workspace/reports/highfly-p43-big-test/P43_INTEGRATION_STATUS.json`. NO Pages or public deploy. If RED with rollback, inspect the exact phase and do not rerun applied scripts individually. Checkpoint includes code only, not private ZIP/media.
+
+**NEXT SINGLE VS CODE COMMAND**:
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only && \
+python3 -m unittest discover -s tests -p 'test_highfly_p4*.py' && \
+python3 scripts/highfly_p43_big_test.py && \
+python3 scripts/highfly_p43_big_test.py --apply
+```
+`test_highfly_p4*.py` includes P40/P41/P42/P43 (P39B ran GREEN separately); if glob matches other P4X tests, can explicitly run four files. Don't accidentally rerun P39B --apply (already applied). P43 build result remains `BUNDLE_BUILT_NOT_PLAYABLE_VERIFIED` until user validates in browser: (1) cangrejos 3D/attack/loot and quest, (2) item icons, (3) name DRAKENLAB level/XP/currency/items/quests/position across manual save and refresh with same browser origin, (4) Spanish + only Hunter entry. Test on both PC preview and S23 later. The original v0.44.7 still has 97 GLBs unresolved and 18 special VFX/skin runtime paths; repair those via provenance/KayKit in future audited bulk passes.
