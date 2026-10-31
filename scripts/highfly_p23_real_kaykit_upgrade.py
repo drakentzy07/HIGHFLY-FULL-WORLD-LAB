@@ -418,6 +418,36 @@ def perform(rows:list[dict], z:zipfile.ZipFile, table:dict, provisional:dict,
     return installed
 
 
+def rollback_applied(installed:list[dict])->list[str]:
+    """Restore exact P22 stage bytes if an unexpected build/packaging failure occurs."""
+    restored=[]
+    for row in reversed(installed):
+        url=row["path"]
+        target=STAGE/"public"/url.lstrip("/")
+        if not target.is_file() or target.is_symlink() or fingerprint(target)!=row["newSha256"]:
+            raise RuntimeError("P23_ROLLBACK_REFUSE_CHANGED_FILE: "+url)
+        if row["p22Backup"]:
+            backup=Path(row["p22Backup"])
+            if not backup.is_file() or backup.is_symlink():
+                raise RuntimeError("P23_ROLLBACK_BACKUP_MISSING: "+url)
+            expected=p22_provisional_source()[url]
+            if fingerprint(backup)!=expected:
+                raise RuntimeError("P23_ROLLBACK_BACKUP_HASH_MISMATCH: "+url)
+            with tempfile.NamedTemporaryFile(prefix="p23-rollback-",dir=target.parent,delete=False) as f:
+                temp=Path(f.name)
+            try:
+                shutil.copyfile(backup,temp)
+                if fingerprint(temp)!=expected:
+                    raise RuntimeError("P23_ROLLBACK_RESTORED_HASH_BAD: "+url)
+                os.replace(temp,target)
+            finally:
+                temp.unlink(missing_ok=True)
+        else:
+            target.unlink()
+        restored.append(url)
+    return restored
+
+
 def status_after(installed:list[dict]):
     counters=Counter()
     errors=[]
@@ -447,12 +477,20 @@ def run(apply:bool=False,max_models:int=249):
         if blocked_image:raise RuntimeError("P23_IMAGE_SYMLINK_BLOCKED: "+str(blocked_image))
         installed=[]
         build=None
+        build_exception=None
         if apply:
             if methods.get("BLOCK_BAD_STAGE_STATE",0):
                 raise RuntimeError("P23_P22_STAGE_MISSING_ABORT")
             installed=perform(rows,z,table,provisional,to_image,max_models)
-            build=p9.smoke()["exitCode"]
+            try:
+                build=p9.smoke()["exitCode"]
+            except Exception as exc:
+                build_exception=str(exc)
+                build=-1
         result,errors=status_after(installed) if apply and build==0 else ({},[])
+        rollback_paths=[]
+        if apply and (build!=0 or errors):
+            rollback_paths=rollback_applied(installed)
         report={
             "phase":"HIGHFLY_P23_REAL_CC0_PACK_VISUAL_TAKEOVER",
             "mode":"APPLY" if apply else "DRY_RUN",
@@ -473,7 +511,11 @@ def run(apply:bool=False,max_models:int=249):
                  +methods.get("AMBIGUOUS_KAYKIT_VARIANTS",0),
             "methodCounts":methods,"twoLoadingArtMissing":to_image,
             "installed":installed,"bundledStatuses":result,"bundleErrors":errors,
-            "buildExitCode":build,"items":rows,
+            "buildExitCode":build,"buildException":build_exception,
+            "rollbackPaths":rollback_paths,"rollbackPerformed":bool(rollback_paths),
+            "remainingP22ProceduralAfterApply":249-sum(
+                x["path"].endswith(".glb") for x in installed) if apply and not rollback_paths else 249,
+            "items":rows,
             "followup":"Review source scales, orientation, render/collision, mobile performance, and world entry."}
         OUTPUT.mkdir(parents=True,exist_ok=True)
         file=OUTPUT/"P23_REAL_KAYKIT_VISUAL_TAKEOVER.json"
@@ -482,7 +524,9 @@ def run(apply:bool=False,max_models:int=249):
                  "kaykitZipModelsIndexed":report["archiveGltfCandidates"],
                  "methods":methods,"realPackModelsInstalled":sum(x["path"].endswith(".glb") for x in installed),
                  "loadingImagesInstalled":sum(x["path"].endswith(".webp") for x in installed),
-                 "bundleStatuses":result,"buildExitCode":build,"gameplayVerified":False}
+                 "remainingP22Procedural":report["remainingP22ProceduralAfterApply"],
+                 "bundleStatuses":result,"buildExitCode":build,
+                 "rollbackPerformed":bool(rollback_paths),"gameplayVerified":False}
         print("[HIGHFLY] P23 "+report["mode"]+": "+json.dumps(summary,ensure_ascii=False))
         print("[HIGHFLY] P23 REPORT: "+str(file))
         if apply and (build!=0 or errors):
