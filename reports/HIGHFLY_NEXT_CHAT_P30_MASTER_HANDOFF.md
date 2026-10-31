@@ -92,3 +92,20 @@ python3 scripts/highfly_p29_actor_skill_vfx_audit.py
 ```
 
 **PRÓXIMO BLOQUEADOR**: leer resultados `[HIGHFLY] P33 ACTORS` y `[HIGHFLY] P33 SELECTOR`, comprobar el `warrior_modular.glb`, y entonces reparar selector del Hunter y su fuente visual sin restaurar 9 clases. Los modelos CC0 no garantizan personajes visibles si falta composición modular. Validar build privado, navegador y rutas dinámicas antes de prometer mundo completo.
+
+## P34 — fallback visual reparador por falta del GLB modular
+P33 usuario ejecutado OK: **83 CC0 restaurados**, `actorModelsPresent:8/9`, falta `models/chars/modular/warrior_modular.glb`; `mage_classic.glb` y `training_dummy.glb` siguen en REVIEW. P33 distinguió `manifest.ts` y `assets.ts` como los dos archivos de render modificados respecto al original. La ausencia de clases seleccionables NO explica por sí sola la falta de los modelos NPC.
+
+Nuevo `scripts/highfly_p34_fixed_actor_fallback.py` + pruebas `tests/test_highfly_p34_fixed_actor_fallback.py`. Ante ausencia de la biblioteca modular, modifica SOLO la copia privada del stage: desactiva temporalmente `setModularLookProvider` en `src/render/characters/index.ts` para usar rigs fijos ya restaurados (NPC según `visualKeyFor`, Hunter según manifest HIGHFLY), evita precarga de defs modulares ausentes en `manifest.ts`, y si falta `mage_classic.glb`, usa `npc_mage` CC0 para Brother Aldric, sin cambiar su ID, diálogos, posición ni quests. Hace copias de seguridad antes; no modifica 9 clases, simulación, rama de ClaudeCraft ni Pages. Los rostros/apariencias originales de NPC modulares NO quedan restaurados hasta hallar fuente modular autorizada o implementar composición 100% propia y compatible.
+
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_highfly_p34_fixed_actor_fallback.py'
+python3 scripts/highfly_p34_fixed_actor_fallback.py
+python3 scripts/highfly_p34_fixed_actor_fallback.py --apply
+python3 scripts/highfly_p9_private_build_smoke.py
+python3 scripts/highfly_p29_actor_skill_vfx_audit.py
+```
+
+`P34` usa fuentes con anclas exactas y aborta ante cambios que no reconoce; los tests aún requieren ejecución en Codespaces. **No demuestra visibilidad ni corrección del editor Hunter** sin prueba interactiva. Si quedan NPC invisibles, investigar donantes de animación GLB o attachments faltantes a través del informe de red del navegador. No publicar si hay medios project-only no aprobados.
