@@ -25,9 +25,44 @@ class P29Tests(unittest.TestCase):
 
     def test_legacy_class_skins_cannot_be_misread_as_missing_npc_models(self):
         url="/textures/skins/knight/alt_a.ktx2"
-        self.assertEqual(p29.classify(url),"OLD_CLASS_SKIN_VARIANT")
+        self.assertEqual(p29.classify(url),"LEGACY_RIG_SKIN_USAGE_AUDIT")
         self.assertNotIn(url,p29.PROJECT_ONLY)
-        self.assertIn("DECOUPLE",p29.action(url))
+        self.assertIn("NPC_AND_PLAYER_RIG_CONSUMERS",p29.action(url))
+        self.assertIn("DO_NOT_AUTO_DELETE",p29.action(url))
+
+    def test_single_universal_hunter_does_not_homogenize_npc_appearances(self):
+        policy=p29.VISUAL_POLICY
+        self.assertEqual(policy["player"]["target"],"ONE_HUNTER_UNIVERSAL")
+        self.assertEqual(policy["npc"]["target"],"PRESERVE_DIVERSE_ORIGINAL_NPC_ROLES")
+        self.assertIn("NPC IDs",policy["npc"]["rule"])
+        self.assertIn("KayKit Complete SOURCE V7",policy["npc"]["models"])
+        self.assertIn("loot",policy)
+        self.assertIn("creatures",policy)
+        self.assertIn("training",policy)
+        self.assertEqual(len(set(p29.NPC_ROLE_BASE_RIGS.values())),5)
+
+    def test_contract_inspection_never_claims_actual_npc_visible(self):
+        from unittest.mock import patch
+        with TemporaryDirectory() as temp:
+            stage=Path(temp)
+            base=stage/"src/render/characters"
+            base.mkdir(parents=True)
+            (base/"manifest.ts").write_text(
+                "npc_knight: npc_mage: npc_smith: npc_villager: "
+                "mob_training_dummy: npc_modular_")
+            (base/"npc_looks.ts").write_text("NPC_LOOKS npcModularKeyFor")
+            (base/"index.ts").write_text("npcModularKeyFor createCharacterVisual")
+            sim=stage/"src/sim/content"
+            sim.mkdir(parents=True)
+            (sim/"practice_dummies.ts").write_text(
+                "HUB_TRAINING_DUMMY_ID FRIENDLY_PLAYER_DUMMY_ID")
+            with patch.object(p29,"STAGE",stage):
+                evidence=p29.visual_contract_checks()
+        self.assertFalse(evidence["npcHomogenizationAllowed"])
+        self.assertFalse(evidence["oldRigOrSkinAssetCanBeDeletedWithoutConsumerAudit"])
+        self.assertEqual(evidence["visualManifestRoleMappings"]["termsMissing"],[])
+        self.assertEqual(evidence["npcIndividuatedLooks"]["termsMissing"],[])
+        self.assertEqual(evidence["trainingDummyGameSystem"]["termsMissing"],[])
 
     def test_special_vfx_are_not_copied_as_cc0(self):
         for path in p29.VFX_GLBS:
