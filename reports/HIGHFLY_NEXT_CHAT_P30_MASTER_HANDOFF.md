@@ -273,3 +273,31 @@ python3 scripts/highfly_p43_big_test.py && \
 python3 scripts/highfly_p43_big_test.py --apply
 ```
 `test_highfly_p4*.py` includes P40/P41/P42/P43 (P39B ran GREEN separately); if glob matches other P4X tests, can explicitly run four files. Don't accidentally rerun P39B --apply (already applied). P43 build result remains `BUNDLE_BUILT_NOT_PLAYABLE_VERIFIED` until user validates in browser: (1) cangrejos 3D/attack/loot and quest, (2) item icons, (3) name DRAKENLAB level/XP/currency/items/quests/position across manual save and refresh with same browser origin, (4) Spanish + only Hunter entry. Test on both PC preview and S23 later. The original v0.44.7 still has 97 GLBs unresolved and 18 special VFX/skin runtime paths; repair those via provenance/KayKit in future audited bulk passes.
+
+## P44 — Correcciones de la prueba visual real P43
+El usuario corrigió al asistente: **NO generar imágenes/infografías a partir de capturas del juego**; eran pruebas para diagnosticar código. El trabajo debe continuar con GitHub, scripts y terminal Codespaces.
+
+Capturas P43 2026-10-31 21:54Z: **ÉXITOS CONFIRMADOS** guardado offline P41 manual/visible (usuario reportó OK, aún export/import y recarga de varios datos no exhaustivamente demostrada), cangrejos visibles y matables, arañas visibles, tutorial misiones y loot funcionales, español principal y NPC interactivos, varias imágenes de equipamiento ya corregidas. **BUGS**: lobo invisible en Eastbrook; Madreperla (anillo) sin icono, sus quest art incompletas; bloque rectangular/tan gigantesco en Eastbrook con construcciones fuera de lugar y colisiones/escala sospechosas; NPC Eastbrook todavía muy parecidos; pinchos y tablones del tutorial impropios; inicio todavía se titula GUERRERO con estadísticas Rage antiguas aunque solo una clase seleccionable, se necesita selector de skins real; clase técnica interna warrior NO convertir sin rediseñar. Se solicita código VS Code, no diseños de imagen.
+
+Investigación ORIGINAL v0.44.7:
+- `src/render/characters/manifest.ts` `mob_wolf` y `form_ghost_wolf` usan `models/creatures/wolf_basic.glb`, anotado **Tripo wolf, proyecto personalizado**; `WOLF_BAKED` requiere clips del rig custom. En cambio `scripts/assets/specs/characters.json` mapea `tmp/asset_src/quaternius_creatures/Wolf.glb` a `models/creatures/wolf.glb`, con crédito Quaternius **CC0** en `CREDITS.md`. El core original `animal(['Attack'])` es apropiado para el rig original de Quaternius (Idle/Walk/Gallop/etc). No afirmar `wolf_basic.glb` como CC0.
+- `src/sim/content/proving_shore.ts` `mother_of_pearl` es el anillo recompensa, `ps_lustrous_pearl` ítem de misión, `ps_briny_lure` señuelo. No confundir los tres.
+- P37 desvía NPC genéricos a `highfly_npc_rogue`; originales `NPC_KEYS` contienen identidades por profesión, y P44 agrega 16 overrides exactos sobre seis modelos CC0 existentes.
+- Causa del bloque tan gigante Eastbrook **NO confirmada**: puede ser escala de edificio, un prop, malla compuesta o geometría en renderer; evitar eliminar/encoger toda la zona sin medir. Primero inspeccionar tamaños GLB y correlacionar transform/posición.
+
+Código **P44** subido a rama `highfly-origin-commercial-p0`: `scripts/highfly_p44_world_visuals.py` y `tests/test_highfly_p44_world_visuals.py`. Correcciones stage-only:
+1. Cambia solo las dos definiciones de lobo visual para usar `wolf.glb` Quaternius original con clips `animal(['Attack'])`, quita authoredAtlas en mob_wolf, copia por hash GLB si falta, pasa direct-public asset URL y preload antes de world.
+2. Agrega dibujos SVG HIGHFLY nuevos para tres rutas exactas `ui/items/{mother_of_pearl,ps_lustrous_pearl,ps_briny_lure}.webp` al fallback P40.
+3. Añade mapeos visuales para 16 identidades/profesiones NPC Eastbrook sin cambiar sim/comercios/quest.
+4. Audita por JSON las dimensiones locales de las siete GLB construcciones del P8; **no se cambia geometría/escalas todavía**; el resultado puede identificar un modelo desmesurado o no. No confundir GLB accessor bounds con dimensiones transformadas de la instancia.
+
+**NO se ha ejecutado P44 en Codespaces aún**. Test, dry-run, apply, build:
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only && \
+python3 -m unittest discover -s tests -p 'test_highfly_p44_world_visuals.py' && \
+python3 scripts/highfly_p44_world_visuals.py && \
+python3 scripts/highfly_p44_world_visuals.py --apply && \
+python3 scripts/highfly_p9_private_build_smoke.py
+```
+No repetir P39/P43 --apply; stage P43 preservado. Si sale rojo revisar traceback antes de nuevos cambios. Si sale verde revisar lobo visible y animado, iconos Madreperla y NPC Eastbrook; para el bloque gigante mandar salida `[HIGHFLY] P44 EASTBROOK GLB BOUNDS` y/o reporte `.workspace/reports/highfly-p44/P44_REPORT.json` para determinar siguiente fix. Restan como trabajos después: reparar geometría/colisiones reales de Eastbrook, prop pinchos/tablas, Hunter Universal con skin selector funcional, iconos restantes, otros mobs bloqueados 97 por procedencia. Evitar hacer un nuevo menú cosmético decorativo sin funcionalidad.
