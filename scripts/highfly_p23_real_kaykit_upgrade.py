@@ -147,7 +147,7 @@ def zip_index(zipfile_obj:zipfile.ZipFile):
         packs=[
             part for part in p.parts[:-3]
             if part.startswith("KayKit ")
-            and not re.search(r"\\b(?:complete|collection)\\b",part,re.IGNORECASE)
+            and "complete" not in part.casefold() and "collection" not in part.casefold()
         ]
         if not packs:
             continue
