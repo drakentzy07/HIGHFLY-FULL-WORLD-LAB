@@ -10,7 +10,11 @@ class Tests(unittest.TestCase):
        "  form_ghost_wolf: {\n    url: "+chr(96)+wolf+"/wolf_basic.glb"+chr(96)+",\n    clips: WOLF_BAKED,\n  },\n"
        "  const npcBaseKey = NPC_KEYS[e.templateId] ?? 'npc_villager';",
    p.FILES[1]:"export async function preloadHighflyCrabAssets(): Promise<void> {",
-   p.FILES[2]:"  'models/creatures/crab_ability_anims.glb',",
+   p.FILES[2]:("const HIGHFLY_P38_DIRECT_CC0_MEDIA = new Set([\n"
+    "  'models/creatures/crab_ability_anims.glb',\n"
+    "  // HIGHFLY_P39B_ALL_MOBS_CC0_LAZY_LOAD: approved mob paths\n"
+    "  'models/creatures/crab_ability_anims.glb',\n"
+    "]);"),
    p.FILES[3]:"  preloadHighflyCrabAssets,\n  await preloadHighflyCrabAssets();",
    p.FILES[4]:"const art=Object.freeze({",
   }
@@ -20,6 +24,9 @@ class Tests(unittest.TestCase):
   self.assertIn("preloadHighflyWolf",x[p.FILES[1]])
   self.assertIn("await preloadHighflyWolf()",x[p.FILES[3]])
   self.assertIn("ui/items/mother_of_pearl.webp",x[p.FILES[4]])
+  self.assertEqual(x[p.FILES[2]].count("'models/creatures/crab_ability_anims.glb',"),2)
+  self.assertEqual(x[p.FILES[2]].count("'models/creatures/wolf.glb',"),1)
+  self.assertIn("HIGHFLY_P38_DIRECT_CC0_MEDIA",x[p.FILES[2]])
  def test_npc_roles_without_sim_changes(self):
   x=p.patch(self.sample())[p.FILES[0]]
   self.assertIn("NPC_KEYS[e.templateId]",x)
