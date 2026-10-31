@@ -3,6 +3,7 @@
 Leaves P43 saves, combat, building geometry, quests, loot and player logic alone.
 """
 import argparse,hashlib,json,re,shutil,struct,sys
+from datetime import datetime, timezone
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
