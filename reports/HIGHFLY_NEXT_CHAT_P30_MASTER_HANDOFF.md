@@ -222,3 +222,19 @@ Si falla otra ancla/source o falta el GLB original, el script aborta y debe inve
 **Spanish infrastructure:** src/ui/i18n.ts already supports es and es_ES, query ?lang=es, and storage key 'locale'. Test query before rewriting; hardcoded player/menus/NPC/dialog labels remain possible. Existing screenshot is English.
 
 **Next priorities:** (P39) stable checkpoint and save/load offline architecture + implementation with tests; (P40) legal and original HIGHFLY inventory item icons/broken paths, no CraftPix; (P41) Spanish interface/dialogues + Hunter-only editor, removing nine playable class choices; (P42) missing VFX/skins/remaining world sweep and Android HUD. Keep P38, P37, P36 operational. User wants icon and offline save fixed next. No private KayKit ZIP in public commits.
+
+## P39A — Primer mob visible: Shore Scuttler y Mister Crabs (31 Oct 2026)
+Capturas tras P38 + `?lang=es`: Ferryman Odo Druid, Warden Tam Ranger/Scout, otros NPC diferenciados, blancos de entrenamiento visibles, reciben daño y completan quests, español parcialmente funcional; **cangrejos del tutorial NO se ven**, aunque sus entidades existen, bloqueando `Caparazón y Garra`. Inventario/bolsa tiene iconos rotos y el progreso offline no persiste (la función original es deliberadamente sin save). Usuario pidió prioridades monstruos, items, loot, save.
+
+Confirmado directamente en fuente WOC v0.44.7 `src/sim/content/proving_shore.ts` `shore_scuttler` (min lv1/2, HP 18+6, loot 4 copper, respawn 7 segundos) y `mister_crabs`, ambos `src/render/characters/manifest.ts` `shore_scuttler: 'mob_crab'` y `mister_crabs: 'mob_crab'`; `mob_crab` referencia `models/creatures/crabenemy.glb` con donantes `crabenemy_hit_variety_anims.glb`, `crab_ability_anims.glb`. `scripts/assets/specs/characters.json`: `tmp/asset_src/quaternius_creatures/CrabEnemy.glb` -> `models/creatures/crabenemy.glb`. Quaternius FAQ oficial dice CC0, pero el registro CREDITS de WoC no enumera *crab* en su lista resumida de criaturas; basar licencia exacta en el source Quaternius y scripts originales, revisar antes de comercializar.
+
+NUEVO `scripts/highfly_p39a_crab_restore.py` + `tests/test_highfly_p39a_crab_restore.py`, subidos a GitHub rama `highfly-origin-commercial-p0`. Solo stage privado. Preflight, procedencia y header GLB, hashes, copia create-only de tres GLBs si faltan, mantiene archivos ya existentes idénticos; añade tres rutas directas a `HIGHFLY_P38_DIRECT_CC0_MEDIA`, preloader separado `preloadHighflyCrabAssets()` en assets.ts y await después de NPC preloader en main.ts, *antes de entrar al mundo*. Mantiene `mob_crab` originales, ID/AI/combat/spawn/loot/quest y P38/P36 intactos; guarda backup de tres TS. DRY_RUN primero, aborta al haber ancla cambiada, GLB original ausente, o stage con discrepancia de hash. `--apply` no inicia build ni deploy.
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only && \
+python3 -m unittest discover -s tests -p 'test_highfly_p39a_crab_restore.py' && \
+python3 scripts/highfly_p39a_crab_restore.py && \
+python3 scripts/highfly_p39a_crab_restore.py --apply && \
+python3 scripts/highfly_p9_private_build_smoke.py
+```
+**Los tests P39A y runtime NO se han ejecutado en Codespaces aún.** Requiere probar cangrejos visibles, poder golpearlos, recibir 4 cobres si loot se procesa correctamente y avanzar quest. Si da ROJO, NO repetir P38/P37, revisar error de P39A. Luego cubrir otros mobs por auditoría masiva, P40 iconos item+loot, P41 persistencia offline real, P42 completar español y Hunter-only selector. El usuario ya probó parte de `?lang=es`.
