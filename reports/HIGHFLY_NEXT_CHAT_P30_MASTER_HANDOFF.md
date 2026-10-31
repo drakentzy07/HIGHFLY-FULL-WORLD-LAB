@@ -76,3 +76,19 @@ python3 scripts/highfly_p31_cc0_wolf_restore.py
 python3 scripts/highfly_p31_cc0_wolf_restore.py --apply
 ```
 Los siguientes lotes deberán usar un registro explícito de procedencia/licencia por recurso: ***nunca*** tratar todos los `SPEC_PROVIDER_CC0_REUSE_CANDIDATE` como autorizados sin inspección. P31 sirve como piloto para la restauración sistemática, no demuestra que el lobo ya aparezca en runtime.
+
+## P33 — Recuperación global CC0 y diagnóstico del Hunter (31 Oct 2026)
+Tras revisar P32 (auditoría 15 zonas), se confirmó que el borrado de 9 clases de jugador podría afectar al selector/creador, pero por sí solo NO explica la falta de cuerpos NPC. El sistema NPC usa una biblioteca modular `warrior_modular.glb` y donantes de clips (con excepciones como Brother Aldric). `P30` no demuestra licencias ni render/instancias definitivas. P32 es alcance documental, no una auditoría efectuada.
+
+NUEVO: `scripts/highfly_p33_world_cc0_restore.py` con test `tests/test_highfly_p33_world_cc0_restore.py`. **Dry-run por defecto**, escanea todo el `public` original (GLB y PNG/JPG/WebP con verificaciones), cruce exacto `src -> out` según specs y fuente acreditada CC0, restaura masivamente solo faltantes aprobados y sustituye únicamente P22 provisional por un original CC0 documentado conservando copia de seguridad. No altera el RPG ni el selector de personaje. Recursos project-only/no verificados quedan bloqueados, no instala el `warrior_modular.glb` sin derechos demostrados. El informe identifica rutas actor y diferencias de código original/stage para diagnosticar el Hunter. No ejecuta un build ni prueba el navegador por sí mismo.
+
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_highfly_p33_world_cc0_restore.py'
+python3 scripts/highfly_p33_world_cc0_restore.py
+python3 scripts/highfly_p33_world_cc0_restore.py --apply
+python3 scripts/highfly_p29_actor_skill_vfx_audit.py
+```
+
+**PRÓXIMO BLOQUEADOR**: leer resultados `[HIGHFLY] P33 ACTORS` y `[HIGHFLY] P33 SELECTOR`, comprobar el `warrior_modular.glb`, y entonces reparar selector del Hunter y su fuente visual sin restaurar 9 clases. Los modelos CC0 no garantizan personajes visibles si falta composición modular. Validar build privado, navegador y rutas dinámicas antes de prometer mundo completo.
