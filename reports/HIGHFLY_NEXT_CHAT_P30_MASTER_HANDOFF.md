@@ -109,3 +109,17 @@ python3 scripts/highfly_p29_actor_skill_vfx_audit.py
 ```
 
 `P34` usa fuentes con anclas exactas y aborta ante cambios que no reconoce; los tests aún requieren ejecución en Codespaces. **No demuestra visibilidad ni corrección del editor Hunter** sin prueba interactiva. Si quedan NPC invisibles, investigar donantes de animación GLB o attachments faltantes a través del informe de red del navegador. No publicar si hay medios project-only no aprobados.
+
+## P35 — diagnóstico real de NPC invisibles, bolsa e inventario (31/10)
+Tras P33 (83 CC0 restaurados) y P34 (fallback a rigs fijos), la prueba visual del usuario confirma: Hunter visible y móvil, Proving Shore explorable, **NPC siguen invisibles** pese al interactuable `F Talk`; campana/faroles aún se ven geométricos; pantalla de clases antiguas y thumbnails rotos; bolsa e inventario también requieren revisión. Se adjuntó JSON P20 de browser de 31/10 a las 15:28 UTC: 567 peticiones, 63 respuestas fallidas, 19 rutas únicas (9 GLB VFX, 5 skins de Knight, 4 KTX2 VFX, 1 dummy). **NO incluye rutas NPC**: el detector observa fetch/HTML fallback pero NO fallos internos de `createCharacterVisual`; no confundir con los 48 ítems estáticos P29.
+
+Nuevo `scripts/highfly_p35_actor_ui_debug.py` y `tests/test_highfly_p35_actor_ui_debug.py`. Instrumentación temporal SOLO de stage privado: añade recolector en `index.html`, registros internos de `src/render/renderer.ts` (intentos NPC + si logra crear view y si hay visual/root visible) y `src/render/characters/index.ts` (excepciones visuales), más scanner de imágenes rotas en los menús, incluida bolsa/inventario. Añade botón superior `HIGHFLY P35 - NPC/BOLSA` que descarga `HIGHFLY_P35_NPC_BOLSA_INVENTARIO.json`. Requiere build privado P9. Tiene copias de seguridad y es reversible; **NO repara NPC automáticamente** sino que identifica por qué se omiten. Ejecutar tests, dry-run, apply y P9; entrar al juego, abrir bolsa/inventario, recorrer y accionar botón. No publicar esta instrumentación.
+
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_highfly_p35_actor_ui_debug.py'
+python3 scripts/highfly_p35_actor_ui_debug.py
+python3 scripts/highfly_p35_actor_ui_debug.py --apply
+python3 scripts/highfly_p9_private_build_smoke.py
+```
