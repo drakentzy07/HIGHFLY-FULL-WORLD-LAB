@@ -13,6 +13,6 @@ class Tests(unittest.TestCase):
   self.assertIn("#mobile-jump",p.CSS)
   self.assertNotIn("document.createElement('button')",p.TS)
  def test_not_claiming_full_sim_combat(self):
-  self.assertIn("not full integration",p.__doc__)
+  self.assertIn("before wiring to sim/render in the next phase",p.__doc__)
   self.assertNotIn("sim.applyDamage",p.TS)
 if __name__=="__main__":unittest.main()
