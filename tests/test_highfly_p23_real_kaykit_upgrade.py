@@ -77,6 +77,29 @@ class P23OwnedArtTests(unittest.TestCase):
             self.assertEqual(index["valid_asset"][0]["pack"],"KayKit Dungeon Pack 1.1")
             self.assertEqual(index["valid_nested"][0]["pack"],"KayKit Dungeon Pack 1.1")
 
+    def test_only_source_archive_models_no_free_variants_or_legacy_stage_reuse(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"Kaykit_CompleteV7_source.zip"
+            with zipfile.ZipFile(path,"w") as archive:
+                archive.writestr("KayKit Complete V7/KayKit Dungeon Pack 1.1/Assets/gltf/anvil.gltf","{}")
+                archive.writestr("KayKit Complete V7/KayKit Dungeon FREE/Assets/gltf/anvil_free.gltf","{}")
+                archive.writestr("KayKit Complete V7/KayKit Halloween Demo/Assets/gltf/gravestone.gltf","{}")
+                archive.writestr("KayKit Complete V7/Unknown Unlicensed Pack/Assets/gltf/sword.gltf","{}")
+                archive.writestr("KayKit Complete V7/KayKit Dungeon Pack 1.1/Some/Other/gltf/invalid.gltf","{}")
+            with zipfile.ZipFile(path) as archive:
+                table,index=p23.zip_index(archive)
+            self.assertEqual(len(table),5)
+            self.assertEqual(sum(len(x) for x in index.values()),1)
+            self.assertIn("anvil",index)
+            self.assertNotIn("anvil_free",index)
+            self.assertNotIn("gravestone",index)
+            self.assertNotIn("sword",index)
+            self.assertNotIn("invalid",index)
+            self.assertEqual(index["anvil"][0]["source"],"USER_OWNED_KAYKIT_COMPLETE_SOURCE_V7")
+            model=p23.match_archive("/models/dungeon/ignivar_prop_anvil.glb",index)
+            self.assertEqual(model["method"],"REPLACE_WITH_OWNED_KAYKIT")
+            self.assertEqual(model["sourceZipMember"],index["anvil"][0]["member"])
+
     def test_never_replace_structural_contracts(self):
         paths=(
             "/models/mounts/valorsteed.glb",
