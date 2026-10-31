@@ -172,3 +172,23 @@ python3 scripts/highfly_p9_private_build_smoke.py
 **Aún por validar desde navegador**: que distintos NPC usen rigs diferenciados, que sigan interactivos (F Talk, quests, vendor) y que los nueve tutoriales estén representados. Mantener botón P35 y descargar `HIGHFLY_P35_NPC_BOLSA_INVENTARIO.json` para examinar fallback y error interno si persisten clones. El muñeco del tutorial `training_dummy.glb` continúa faltando y su autorización es `With the project only`, no CC0; requiere sustituto licenciado. Guardado offline, inventario, iconos, decoración y editor Hunter siguen pendientes de corrección separada.
 
 Licencias: `appearance_customizer.ts`, `npc_looks.ts`, `modular.ts` son código MIT reutilizable conservando licencia; la biblioteca 3D `warrior_modular.glb` con cabellos/piezas particulares no adquiere CC0/MIT por estar en el repositorio. P37 utiliza los seis modelos KayKit CC0 acreditados y recuperados, **no** reutiliza esa biblioteca de geometría no verificada.
+
+## P38 — causa REAL de NPC todos Warrior y maniquí invisible (31 Oct 2026)
+El usuario adjuntó `HIGHFLY_P35_NPC_BOLSA_INVENTARIO.json` y nuevo P20. P35 reveló **111 `actor_visual_error`**, 14 `npc_fixed_fallback_success`, ocho NPC-view candidates. Todos los NPC anotados `highfly_npc_druid` (Ferryman Odo), `highfly_npc_rogue` (Warden Tam y otros), `highfly_npc_knight` (Maren/Rook), `highfly_npc_barbarian` (Pell) fallan por `character asset not preloaded: models/chars/players/<rol>.glb`; P36 finaliza con `fallbackKey: player_warrior`. **El fallo no es ausencia del modelo GLB en disco**, ni desactivación de nueve clases: falta completar la precarga interna/URL de producción y `gltfByUrl` antes del renderizador. El registro P35 también muestra 43 imágenes DOM rotas (iconos de inventario) que **no** son la prioridad actual. P20 conserva 19 rutas GLB/KTX2 que no incluyen GLB NPC, pero sí `models/creatures/training_dummy.glb`. Este modelo original es Tripo project-only y no debe presentarse como CC0.
+
+Nuevo `scripts/highfly_p38_npc_preload_and_dummy.py` + `tests/test_highfly_p38_npc_preload_and_dummy.py`: cuatro parches **SOLO en stage privado** y copia de asset CC0 documentado:
+1. `src/render/assets/media.ts` enruta directamente seis modelos NPC KayKit CC0 de `public/models/chars/players/*.glb` y un blanco CC0 (el stage no contiene necesariamente el `/media/<hash>.glb` de ClaudeCraft original).
+2. `src/render/characters/assets.ts` exporta `preloadHighflyNpcRoleBodies()` que llama a `prepareCharacterUrl` y llena el verdadero registro `gltfByUrl`. Un fallo individual no impide entrar al juego, P36 sigue de respaldo.
+3. `src/main.ts` invoca la precarga de seis antes de construir/renderizar el mundo.
+4. `src/render/characters/manifest.ts` usa como apariencia 3D de `mob_training_dummy` el recurso `models/biome/hex_target.glb`, un blanco de práctica de **KayKit Medieval Hexagon Pack CC0** procedente de `scripts/assets/specs/gale_camp.json`. Se copia el GLB original por SHA256 si faltase; no inventa geometría ni toca NPC/loot/combate/métricas de dummy. Sus clips humanoides se mantuvieron como configuración por compatibilidad temporal; el modelo objetivo es **estático**, su animación ha de validarse en navegador. No reintroduce el modelo original Tripo.
+
+Script requiere P37/P36 existentes, valida fuente y crédito CC0, seis modelos GLB, anclas exactas, guarda backup de los cuatro TS antes de modificar. Cambios futuros de fuente → aborta. **NO probado aún en Codespaces**:
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_highfly_p38_npc_preload_and_dummy.py'
+python3 scripts/highfly_p38_npc_preload_and_dummy.py
+python3 scripts/highfly_p38_npc_preload_and_dummy.py --apply
+python3 scripts/highfly_p9_private_build_smoke.py
+```
+Verificar navegador: Odo ≠ Maren ≠ Pell, los nueve NPC tutorial visibles y `F Talk`; blanco de tiro en los camps de dummy, sus colisiones y contador de golpes; monitor P35 debe bajar errores `character asset not preloaded` de seis GLB. Puede persistir fallback si archivos GLB no son decodificables o precarga falla. No asegurar funcionalidad completa hasta resultado de usuario. Guardado offline e iconos siguen pendientes.
