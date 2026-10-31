@@ -208,3 +208,17 @@ python3 scripts/highfly_p38_npc_preload_and_dummy.py --apply && \
 python3 scripts/highfly_p9_private_build_smoke.py
 ```
 Si falla otra ancla/source o falta el GLB original, el script aborta y debe investigarse, no se debe copiar recursos alternativos a ciegas. `--apply` solo corre después de dry-run correcto. No asegurar que NPC o dummy ya cambiaron visualmente sin navegador.
+
+## P38 VISUAL GREEN / P39 priorities (2026-10-31)
+
+**User screenshots confirm P38 success:** Ferryman Odo and Warden Tam visibly use DIFFERENT bodies/outfits; the Training Effigy target models are visible; Run the Gauntlet quest accepted with 1/3 progress. P36 fallback preserved. This is our known-good visual milestone; do not revert or copy unauthorized models.
+
+**Uploaded P20 18:01Z:** 580 asset fetches, 69 failed responses, 18 unique missing resources (VFX GLBs/KTX2 and five knight cosmetic skins); training dummy absent from missing routes. Not zero failures and not entire world validated.
+
+**Uploaded P35 18:01Z:** 43 broken image DOM elements, 20 unique image paths: nine old class portraits under ui/classes, three immediately visible equipment icons ui/items/recruit_tunic.webp, ui/items/worn_sword.webp, ui/items/eastbrook_buckler.webp; honor, treasure_chest, three phoenix procs and three warrior skills. Preview error counts remain (95 window_error, 168 actor_visual_error), despite nine NPC views built and visible; some errors involve other actors, forms, donor animations. Do not conflate all 168 with NPC failure.
+
+**Root cause of offline lost progress CONFIRMED in original source:** src/main.ts around line 5236 says 'Offline characters are not persisted (a fresh name is typed each session).' This is missing feature, not a failing existing autosave. Source Sim.serializeCharacter(pid) in src/sim/sim.ts near 3832 and Sim.addPlayer(cls, name, {state}) near 2665 offer migration/restore shapes. Build and test HIGHFLY persistence carefully (IndexedDB or robust saved snapshot with versioned schema and export; full inventory, equipment, quests, XP, position, wallet, skills); inspect Sim constructor/offline lifecycle before patch. Do not claim implemented.
+
+**Spanish infrastructure:** src/ui/i18n.ts already supports es and es_ES, query ?lang=es, and storage key 'locale'. Test query before rewriting; hardcoded player/menus/NPC/dialog labels remain possible. Existing screenshot is English.
+
+**Next priorities:** (P39) stable checkpoint and save/load offline architecture + implementation with tests; (P40) legal and original HIGHFLY inventory item icons/broken paths, no CraftPix; (P41) Spanish interface/dialogues + Hunter-only editor, removing nine playable class choices; (P42) missing VFX/skins/remaining world sweep and Android HUD. Keep P38, P37, P36 operational. User wants icon and offline save fixed next. No private KayKit ZIP in public commits.
