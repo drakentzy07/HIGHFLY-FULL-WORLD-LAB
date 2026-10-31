@@ -123,3 +123,18 @@ python3 scripts/highfly_p35_actor_ui_debug.py
 python3 scripts/highfly_p35_actor_ui_debug.py --apply
 python3 scripts/highfly_p9_private_build_smoke.py
 ```
+
+## P36 — NPC invisibles, primera corrección de contingencia (31 Oct 2026)
+Prueba visual P35 confirmó: NPC siguen invisibles en **The Proving Shore** aunque aparece `F Talk`; Hunter sí es visible; bolsa e inventario muestran imágenes ausentes; guardado offline reportado como no funcional. La sospecha de tutorial-único es plausible, pues varios NPC del tutorial (p.ej. `ferryman_odo`) caen en `npc_villager` mientras `marshal_redbrook` de Eastbrook usa `npc_knight`; **NO demostrada todavía**. P35 sólo diagnosticó y usuario todavía no compartió `HIGHFLY_P35_NPC_BOLSA_INVENTARIO.json` del botón.
+
+Nuevo `scripts/highfly_p36_npc_visible_fallback.py` y test: el catch de `createCharacterVisual`, cuando `e.kind === 'npc'`, prueba un rig fijo por rol (Paladin/Mage/Shaman/Rogue) y después `player_warrior` comprobado en pantalla. Mantiene NPC templateId, quest, banca, vendor, diálogos, jugador Hunter único, salva y combate. Solo fallback si falla la creación del visual original; no restaura las apariencias autorales ni afirma NPC visibles hasta prueba en Codespaces. Solo stage privado, backup de `index.ts`, no public deploy.
+
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only
+python3 -m unittest discover -s tests -p 'test_highfly_p36_npc_visible_fallback.py'
+python3 scripts/highfly_p36_npc_visible_fallback.py
+python3 scripts/highfly_p36_npc_visible_fallback.py --apply
+python3 scripts/highfly_p9_private_build_smoke.py
+```
+Recargar navegador, verificar Proving Shore y Eastbrook; si NPC sigue oculto, usar botón P35 para descargar JSON, distinguir `npc_view_attempt`, `actor_visual_error` y `npc_fixed_fallback_success`. El salvado offline es bloqueo separado prioritario DESPUÉS de que NPC sean visibles e interactivos.
