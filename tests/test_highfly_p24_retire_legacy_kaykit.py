@@ -23,7 +23,7 @@ class P24LegacySourceTests(unittest.TestCase):
             rows=p24.manifest(index)
         self.assertEqual(len(rows),2)
         self.assertEqual(rows[0]["method"],"REPLACE_WITH_OWNED_KAYKIT")
-        self.assertEqual(rows[1]["method"],"ALREADY_MODIFIED_OR_GONE")
+        self.assertEqual(rows[1]["method"],"ALREADY_CHANGED_OR_ABSENT")
         self.assertEqual(len(p24.ready(rows)),1)
 
     def test_unmatched_old_kaykit_must_not_be_deleted(self):
