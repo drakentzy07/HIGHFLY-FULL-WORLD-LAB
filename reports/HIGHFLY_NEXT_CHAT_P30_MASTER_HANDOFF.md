@@ -238,3 +238,19 @@ python3 scripts/highfly_p39a_crab_restore.py --apply && \
 python3 scripts/highfly_p9_private_build_smoke.py
 ```
 **Los tests P39A y runtime NO se han ejecutado en Codespaces aún.** Requiere probar cangrejos visibles, poder golpearlos, recibir 4 cobres si loot se procesa correctamente y avanzar quest. Si da ROJO, NO repetir P38/P37, revisar error de P39A. Luego cubrir otros mobs por auditoría masiva, P40 iconos item+loot, P41 persistencia offline real, P42 completar español y Hunter-only selector. El usuario ya probó parte de `?lang=es`.
+
+## P39B — **monstruos por lotes**, no 1-por-1; after P39A GREEN (31 Oct 2026)
+Archivo de terminal del usuario `Texto pegado(20261031-182940).txt`: P39A tests **4/4 OK**, DRY_RUN OK, APPLY OK, restauró `models/creatures/crabenemy_hit_variety_anims.glb` y `models/creatures/crab_ability_anims.glb` (el cuerpo `crabenemy.glb` ya estaba), y P9 build `exitCode:0`. **Todavía NO se vio el cangrejo en navegador después de P39A**. No repetir P37/P38/P39A; sus scripts ya aplicados abortan por seguridad. El otro bloque del log muestra primero el fallo anterior de P38, seguido de su hotfix exitoso; no es un rojo actual.
+
+NUEVO `scripts/highfly_p39b_all_mob_visuals.py` + `tests/test_highfly_p39b_all_mob_visuals.py`. En vez de añadir parches por cada especie, P39B enumera todas las definiciones `mob_*` de `src/render/characters/manifest.ts` (101 defs, 122 GLBs literales en la fuente original v0.44.7, estimación validada mediante escaneo) y audita cada body, donor y attach. Restaura EN LOTE exclusivamente los GLB con licencia/procedencia exacta en `scripts/assets/specs/*.json` acreditada CC0 y el par de donors del cangrejo ya verificados en P39A, sin sobrescribir medios existentes y haciendo hash SHA256. Recursos `project-only`, no declarados, faltantes o ambiguos quedan **bloqueados con ruta exacta en CSV/JSON**; no inferir que todos son libres. Agrega URLs públicas directas para el subconjunto aprobado y arma un `ensureHighflyMobVisualAssets(key)` llamado al fallar una vista de mob: carga diferida de body, animaciones y attachments que esté aprobado y permite que el renderer original reintente construir el actor. **No precargar 100 cuerpos simultáneamente**, memoria S23. No altera quests, combat, spawn, NPC, Hunter, dummy, loot ni save. Copia de seguridad antes de editar `media.ts`, `assets.ts`, `index.ts`, en stage privado; no tocar archivo original ni publicar.
+
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only && \
+python3 -m unittest discover -s tests -p 'test_highfly_p39b_all_mob_visuals.py' && \
+python3 scripts/highfly_p39b_all_mob_visuals.py && \
+python3 scripts/highfly_p39b_all_mob_visuals.py --apply && \
+python3 scripts/highfly_p9_private_build_smoke.py
+```
+
+Estado: código P39B subido; **NO tests aplicados en Codespace aún**, no prometer mundo entero reparado; aunque tests y build pasen, explorar tutorial (cangrejos), Eastbrook, bosque y mazmorras y confirmar animales realmente visibles con ataque/loot. Si P39B muestra muchos BLOCK, resolver sus licencias/modelos aparte con KayKit Complete CC0, sin personajes geométricos falsos. Los iconos de inventario (20 rutas únicas dañadas) y persistencia offline (original nunca persiste) son tareas **diferentes**, requieren código específico siguiente. Mantener versión P38 respaldada `.workspace/checkpoints/HIGHFLY-P38-VERDE-src.tar.gz` (35MB, *sólo código*).
