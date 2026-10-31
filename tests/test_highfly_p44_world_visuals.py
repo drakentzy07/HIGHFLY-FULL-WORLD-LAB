@@ -37,6 +37,12 @@ class Tests(unittest.TestCase):
  def test_source_drift_blocked(self):
   x=self.sample();x[p.FILES[1]]="other"
   with self.assertRaisesRegex(RuntimeError,"P44_ANCHOR_DRIFT"):p.patch(x)
+ def test_runtime_report_timestamp_imports(self):
+  # Regression: P45D dry-run previously crashed because datetime was absent.
+  from datetime import datetime, timezone
+  self.assertIs(p.datetime,datetime)
+  self.assertIs(p.timezone,timezone)
+  self.assertIn("+00:00",p.datetime.now(p.timezone.utc).isoformat())
  def test_original_icons(self):
   for value in p.ICONS.values():self.assertIn("<svg",p.icon(value))
 if __name__=="__main__":unittest.main()
