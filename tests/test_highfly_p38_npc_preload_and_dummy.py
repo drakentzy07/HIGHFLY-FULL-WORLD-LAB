@@ -14,7 +14,7 @@ class TestP38(unittest.TestCase):
             p.FILES[2]: ("  charactersReady,\n  ensureCharacterUrl,\n"
                          "  loadPhaseEnd('assets-ready');\n  const spectateBadge\n"),
             p.FILES[3]: ("HIGHFLY_P37_NPC_BASES\n"
-                         "    url: \`\${CREATURES}/training_dummy.glb\`,\n".replace("\\\`", "\`")),
+                         "    url: " + chr(96) + '$' + '{CREATURES}/training_dummy.glb' + chr(96) + ',\n'),
         }
 
     def test_patch_wires_six_cc0_preloads(self):
