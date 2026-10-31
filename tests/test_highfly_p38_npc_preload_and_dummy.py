@@ -28,6 +28,23 @@ class TestP38(unittest.TestCase):
             self.assertIn("models/chars/players/" + model + ".glb", got[p.FILES[1]])
         self.assertIn("HIGHFLY_P37_NPC_BASES", got[p.FILES[3]])
 
+    def test_custom_highfly_media_resolver_kept(self):
+        # Regression for real user Codespaces P38 red:
+        # the stage media.ts no longer has the old upstream if (import.meta.env.DEV).
+        source = self.sample()
+        source[p.FILES[0]] = (
+            "export function assetUrl(url: string): string {\n"
+            "  const logical = url.replace(/^\\\\/+/, '');\n"
+            "  const customMedia = HIGHFLY_OVERRIDES[logical];\n"
+            "  return customMedia ?? '/media/' + logical;\n"
+            "}\n"
+        )
+        patched = p.patch_sources(source)[p.FILES[0]]
+        self.assertIn("HIGHFLY_P38_DIRECT_CC0_MEDIA.has(highflyP38Logical)", patched)
+        self.assertIn("const customMedia = HIGHFLY_OVERRIDES[logical];", patched)
+        self.assertLess(patched.index("HIGHFLY_P38_DIRECT_CC0_MEDIA.has("),
+                        patched.index("const customMedia ="))
+
     def test_idempotent_guard(self):
         fixed = p.patch_sources(self.sample())
         with self.assertRaisesRegex(RuntimeError, "P38_ALREADY_APPLIED"):
