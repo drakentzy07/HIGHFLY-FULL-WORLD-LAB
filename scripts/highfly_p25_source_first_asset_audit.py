@@ -312,7 +312,9 @@ def audit(archive:Path=KAYKIT,external:Path=OTHER_PACKS):
                 "matchedLocalFiles":[x["file"] for x in item["matched"]]
                 }.items()})
     print("[HIGHFLY] P25 AUDIT: "+json.dumps({
-        "runtimePaths":314,"tempModels":len(p22_temps),
+        "runtimePaths":314,
+        "historicalP22ModelsCreated":len(p22_temps),
+        "p22TemporaryModelsStillPresent":states.get("P22_TEMP_PROCEDURAL",0),
         "specOutputPaths":len(specs),
         "runtimeWithSourceSpec":report["runtimeUrlsWithConversionSpecs"],
         "exactSourceNameCandidatesLocally":report["exactSourceIdentifierCandidatesInLocalLibrary"],
