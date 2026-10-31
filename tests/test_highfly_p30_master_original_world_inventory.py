@@ -36,9 +36,8 @@ class P30MasterAuditTests(unittest.TestCase):
             {"brother_halven":"npc_reliquary_keeper"})
         self.assertEqual(p30.expand("models/chars/players/paladin.glb"),
                          "/models/chars/players/paladin.glb")
-        self.assertEqual(p30.expand("models/chars/" +
-            chr(36)+"{PLAYERS}/paladin.glb"),
-            "/models/chars/models/chars/players/paladin.glb")
+        self.assertEqual(p30.expand(chr(36)+"{PLAYERS}/paladin.glb"),
+            "/models/chars/players/paladin.glb")
 
     def test_typed_simulation_id_name_position_and_quests(self):
         raw=("export const RIVER_NPCS: Record<string, NpcDef> = {\n"
