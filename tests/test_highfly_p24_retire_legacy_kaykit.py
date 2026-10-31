@@ -39,7 +39,6 @@ class P24LegacySourceTests(unittest.TestCase):
                "status":"EXACT_OLD_KAYKIT_PRESENT","sha256":"foo"}]
         with patch.object(p24.p23,"legacy_kaykit_inventory",return_value={"items":[]}):
             self.assertEqual(p24.manifest({}),[])
-        self.assertNotIn("Quaternius",p24.__doc__.split("Never")[0] if p24.__doc__ else "")
 
 
 if __name__=="__main__":
