@@ -61,11 +61,16 @@ FAILURES=(
 )
 # All these are diagnostic candidates, not a proof of which actor is invisible.
 ACTOR_PROBES={
+  # Verified against v0.44.7 src/render/characters/manifest.ts.
+  # 'knight' / 'paladin' / 'mage' etc are NPC VISUAL RIGS; they do NOT
+  # imply that HIGHFLY's playable Hunter must have those classes.
   "npc_modular_warrior":"models/chars/modular/warrior_modular.glb",
-  "npc_knight":"models/chars/knight.glb",
-  "npc_mage":"models/chars/mage.glb",
-  "npc_villager_rogue":"models/chars/rogue.glb",
-  "npc_smith_barbarian":"models/chars/barbarian.glb",
+  "npc_knight":"models/chars/players/knight.glb",
+  "npc_mage":"models/chars/players/mage.glb",
+  "npc_villager_rogue":"models/chars/players/rogue.glb",
+  "npc_smith_barbarian":"models/chars/players/barbarian.glb",
+  "npc_reliquary_paladin":"models/chars/players/paladin.glb",
+  "npc_herbalist_druid":"models/chars/players/druid.glb",
   "npc_weapon_sword":"models/weapons/sword_1handed.glb",
   "npc_weapon_staff":"models/weapons/staff.glb",
 }
@@ -118,10 +123,12 @@ VISUAL_POLICY={
  },
 }
 NPC_ROLE_BASE_RIGS={
-  "guard":"models/chars/knight.glb",
-  "mage_or_religious_npc":"models/chars/mage.glb",
-  "villager":"models/chars/rogue.glb",
-  "blacksmith":"models/chars/barbarian.glb",
+  "guard":"models/chars/players/knight.glb",
+  "mage_or_religious_npc":"models/chars/players/mage.glb",
+  "villager":"models/chars/players/rogue.glb",
+  "blacksmith":"models/chars/players/barbarian.glb",
+  "reliquary_keeper":"models/chars/players/paladin.glb",
+  "reedhand_healer":"models/chars/players/druid.glb",
   "modular_npc":"models/chars/modular/warrior_modular.glb",
 }
 # These paths are role-based illustrations of original manifest mappings,
@@ -175,7 +182,8 @@ def binary_valid(path:Path)->bool:
     if suffix==".glb":
         return p21.check_binary(path,"/models/p29.glb")
     if suffix==".ktx2":
-        return path.open("rb").read(12)==b"\xabKTX 20\xbb\r\n\x1a\n"
+        with path.open("rb") as handle:
+            return handle.read(12)==b"\xabKTX 20\xbb\r\n\x1a\n"
     if suffix==".webp":
         return p21.check_binary(path,"/textures/p29.webp")
     if suffix==".png":
@@ -276,6 +284,8 @@ def inspect():
       "stageStillMissing":dict(missing_by_category),
       "actorModelsPresent":sum(x["stageValid"] for x in actors),
       "actorModelsChecked":len(actors),
+      "correctedActorPathsUsed":True,
+      "missingActorAssetPaths":[x["url"] for x in actors if not x["stageValid"]],
       "sourceModulesInStage":sum(x["stageSourcePresent"] for x in systems),
       "sourceModulesExpected":len(systems),
       "npcVisibleVerified":False,"playerVisibleVerified":False,
