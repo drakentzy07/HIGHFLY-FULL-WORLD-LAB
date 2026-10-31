@@ -138,3 +138,19 @@ python3 scripts/highfly_p36_npc_visible_fallback.py --apply
 python3 scripts/highfly_p9_private_build_smoke.py
 ```
 Recargar navegador, verificar Proving Shore y Eastbrook; si NPC sigue oculto, usar botón P35 para descargar JSON, distinguir `npc_view_attempt`, `actor_visual_error` y `npc_fixed_fallback_success`. El salvado offline es bloqueo separado prioritario DESPUÉS de que NPC sean visibles e interactivos.
+
+## MILESTONE 31 Oct 2026 — P36 VISUALMENTE CONFIRMADO EN THE PROVING SHORE 🎯
+Capturas del usuario a las 15:52 UTC prueban NPC 3D **visibles** y rotulados: `Ferryman Odo`, `Warden Tam`, `Overseer Pell`, `Drillmaster Rook`, `Tidewarden Nel` (y otros); Hunter `DRAKENLAB` visible, pueblo tutorial explotable. Antes los NPC eran invisibles y sólo se veía `F Talk`. P36 **sí desbloqueó el renderizado de cuerpos NPC**. Los modelos aparecen como guerreros/knights similares (fallback), NO recrean los rasgos y equipos de `npc_looks.ts`. Verificar interacción efectiva de comercio/quest con diálogo; etiquetas y cuerpos visibles no garantizan que se haya probado la interacción. Es importante conservar P36 mientras se reconstruye apariencia original o equivalente independiente.
+
+Nuevo P20 JSON adjuntado a las 15:51:56 UTC: `fetchAssetAttempts:564`, `badFetchResponses:60`, `distinctFailures:19`. Entre los faltantes sigue `/models/creatures/training_dummy.glb`, varias 9 VFX GLB, cuatro KTX2 de efecto y cinco skins de Knight (datos del JSON). Este número **no mide NPC invisibles ni todo el alcance de P29**. El modelo dummy original tiene crédito específico `Generated creature model + animations (training_dummy)` **Project asset — With the project only**, NO CC0; no instalar como CC0. Rehacer dummy propio con KayKit CC0/recursos propios o analizar uso bajo autorización concreta del fork. Mantener sistema combat dummy original sin modelo hasta su reemplazo.
+
+Hallazgo legal de editor: `src/ui/appearance_customizer.ts`, `src/render/characters/modular.ts`, `src/render/characters/npc_looks.ts`, `src/ui/charselect_redesign.ts` están bajo MIT del **código**, no necesitan volver a tener nueve clases jugables, se pueden adaptar al Hunter único. Los meshes, peinados, ojos, cuerpos, atlas, equipamientos empaquetados en `warrior_modular.glb` **NO** están automáticamente autorizados por MIT; CREDITS establece que medios requieren licencia propia. Desarrollar/portar una biblioteca modular HIGHFLY propia de CC0/medios adquiridos; conservar `npc_looks.ts` como datos/configuración al remapear caras y peinados. El fallback P36 es provisional y no se debe retirar hasta validar el sustituto.
+
+Prioridades explícitas actualizadas:
+1. Confirmar NPC visibles **e interactivos**, preservar misiones/comercio y mirar `HIGHFLY_P35_NPC_BOLSA_INVENTARIO.json` si existen problemas residuales en los modelos; ya se ve el botón P35 en las capturas.
+2. Restaurar variedad visual con assets propios/CC0 por roles/rasgos sin tocar clase única de jugador ni romper NPC. Diseñar piezas modular HIGHFLY compatibles, no todos knights.
+3. Rehacer maniquí de entrenamiento 3D original y legal (P20 falta `training_dummy.glb`).
+4. Diagnosticar y reparar guardado offline.
+5. Iconos de bolsa, inventario, faroles/campana, traducción y menús premium.
+
+NO convertir P20 "19 fallos" en una promesa de mundo completo. NO eliminar P36 sin sustituto visible. NO publicar las imágenes/personajes del autor sin licencia individual.
