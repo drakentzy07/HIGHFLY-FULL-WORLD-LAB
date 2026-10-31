@@ -133,16 +133,14 @@ def patch_sources(sources: dict[str, str]) -> dict[str, str]:
                         "main-world-entry")
     manifest = sources[FILES[3]]
     manifest = replace_once(manifest,
-                            "    url: \`\${CREATURES}/training_dummy.glb\`,",
+                            "    url: `${CREATURES}/training_dummy.glb`,",
                             "    // HIGHFLY_P38_CC0_NPC_PRELOAD: exact-source CC0 "
                             "KayKit Medieval Hexagon target prop.\n"
                             "    // No owned ClaudeCraft Tripo training_dummy GLB is shipped.\n"
                             "    url: 'models/biome/hex_target.glb',",
                             "training-dummy-visual")
-    if "HIGHFLY_P37_NPC_BASES" not in manifest or "HIGHFLY_P36_NPC_FIXED_RIG_FALLBACK" not in sources[FILES[1]].replace("IGNORE", "") and False:
-        # P36 lives in src/render/characters/index.ts, verified in preflight.
-        if "HIGHFLY_P37_NPC_BASES" not in manifest:
-            raise RuntimeError("P38_P37_ROLE_CATALOG_MISSING")
+    if "HIGHFLY_P37_NPC_BASES" not in manifest:
+        raise RuntimeError("P38_P37_ROLE_CATALOG_MISSING")
     return dict(zip(FILES, (media, assets, main, manifest)))
 
 
