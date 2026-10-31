@@ -1,0 +1,113 @@
+#!/usr/bin/env python3
+"""P23 safety + semantic-replacement tests (do not require the user's private ZIP)."""
+from __future__ import annotations
+import json
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+import zipfile
+
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
+import highfly_p22_owned_asset_rebuilder as p22
+import highfly_p23_real_kaykit_upgrade as p23
+
+
+def fake_zip(path):
+    with zipfile.ZipFile(path,"w") as archive:
+        for pack,stem in (
+            ("KayKit Dungeon Pack 1.1","anvil"),
+            ("KayKit Dungeon Pack 1.1","chain"),
+            ("KayKit Dungeon Pack 1.1","chest"),
+            ("KayKit Furniture Bits 1.0","chest"),
+            ("KayKit Medieval Hexagon Pack 1.0.1","building_windmill"),
+            ("KayKit Halloween Bits 1.0","gravestone_B"),
+            ("KayKit Resource Bits 1.0","ore_vein"),
+            ("KayKit Forest Nature Pack 1.0","willow"),
+            ("Unknown Unlicensed Pack","castle"),
+        ):
+            archive.writestr(
+                "KayKit Complete V7/"+pack+"/Assets/gltf/"+stem+".gltf",
+                '{"asset":{"version":"2.0"},"meshes":[{"primitives":[{}]}]}')
+
+
+class P23OwnedArtTests(unittest.TestCase):
+    def test_user_owned_complete_archive_pack_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"kaykit.zip"
+            fake_zip(path)
+            with zipfile.ZipFile(path) as archive:
+                table,index=p23.zip_index(archive)
+                self.assertGreater(len(table),6)
+                self.assertEqual(len(index["anvil"]),1)
+                self.assertNotIn("castle",index)
+                self.assertIn("building_windmill",index)
+                r=p23.match_archive("/models/biome/hex_windmill.glb",index)
+                self.assertEqual(r["method"],"REPLACE_WITH_OWNED_KAYKIT")
+                self.assertIn("Medieval Hexagon",r["sourcePack"])
+                r=p23.match_archive("/models/dungeon/ignivar_prop_anvil.glb",index)
+                self.assertEqual(r["sourceStem"],"anvil")
+                r=p23.match_archive("/models/props/banker_chest.glb",index)
+                self.assertEqual(r["sourceStem"],"chest")
+                self.assertIn("Furniture",r["sourcePack"])
+                r=p23.match_archive("/models/resources/gather_ore_vein.glb",index)
+                self.assertEqual(r["sourceStem"],"ore_vein")
+
+    def test_never_replace_structural_contracts(self):
+        paths=(
+            "/models/mounts/valorsteed.glb",
+            "/models/creatures/leaping_fish.glb",
+            "/models/props/kmed_home_A_hollow.glb",
+            "/models/props/eastbrook_ferry.glb",
+            "/models/props/wickharbor_harbor.glb",
+            "/models/props/fenbridge_crooked_reed_inn.glb",
+            "/models/props/delve_module_exit.glb",
+            "/models/props/streetlamp_wraithwood_ghost.glb",
+            "/models/dungeon/ignivar_prop_bridge_floor.glb",
+            "/models/dungeon/ignivar_prop_lift_arch_beam.glb",
+            "/models/battleground/rune_damage.glb",
+        )
+        for url in paths:
+            self.assertTrue(p23.is_structural(url),url)
+            self.assertEqual(p23.match_archive(url,{})["method"],
+                             "KEEP_P22_CONTRACT_REVIEW")
+
+    def test_exact_stems_and_curated_aliases_only(self):
+        self.assertEqual(p23.model_stems("/models/props/fallback_crate.glb"),
+                         ["fallback_crate","crate"])
+        self.assertEqual(p23.model_stems("/models/dungeon/ignivar_prop_anvil.glb"),
+                         ["ignivar_prop_anvil","anvil"])
+        self.assertNotIn("crate",p23.model_stems("/models/props/fenbridge_hesk_tannery.glb"))
+        self.assertNotIn("house",p23.model_stems("/models/props/dragon_hoard.glb"))
+
+    def test_provenance_guard_rejects_any_tampered_provisional_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target=Path(tmp)/"owned.glb"
+            p22.build_model("/models/props/fallback_crate.glb",target)
+            good=p23.fingerprint(target)
+            self.assertTrue(p23.is_p22_file(target,good))
+            target.write_bytes(target.read_bytes()+b"NOT_ORIGINAL")
+            self.assertFalse(p23.is_p22_file(target,good))
+
+    def test_loading_screen_art_is_original_and_semantically_named(self):
+        for url,title in (
+            ("/textures/loading/fenbridge-rain-skiff.webp","FENBRIDGE"),
+            ("/textures/loading/hollow-crypt-empty.webp","HOLLOW CRYPT"),
+        ):
+            svg=p23.loading_svg(url)
+            self.assertIn("<svg ",svg)
+            self.assertIn(title,svg)
+            self.assertIn("HIGHFLY ORIGIN",svg)
+            self.assertNotIn("ClaudeCraft",svg)
+
+    def test_ambiguity_does_not_pick_random_file(self):
+        entries={"anvil":[
+            {"member":"a","pack":"KayKit Dungeon Pack 1.1","stem":"anvil"},
+            {"member":"b","pack":"KayKit Dungeon Pack 1.1","stem":"anvil"},
+        ]}
+        row=p23.match_archive("/models/dungeon/ignivar_prop_anvil.glb",entries)
+        self.assertEqual(row["method"],"AMBIGUOUS_KAYKIT_VARIANTS")
+
+
+if __name__=="__main__":
+    unittest.main()
