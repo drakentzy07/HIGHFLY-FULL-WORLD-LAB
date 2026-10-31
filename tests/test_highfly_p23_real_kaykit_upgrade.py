@@ -53,6 +53,30 @@ class P23OwnedArtTests(unittest.TestCase):
                 r=p23.match_archive("/models/resources/gather_ore_vein.glb",index)
                 self.assertEqual(r["sourceStem"],"ore_vein")
 
+    def test_wrapper_is_not_pack_and_pack_at_archive_root_is_valid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/"mixed-sources.zip"
+            with zipfile.ZipFile(path,"w") as archive:
+                archive.writestr(
+                    "KayKit Complete V7/Unknown Unlicensed Pack/Assets/gltf/unlicensed.gltf",
+                    "{}")
+                archive.writestr(
+                    "KayKit Complete V7/Assets/gltf/wrapper_only.gltf",
+                    "{}")
+                archive.writestr(
+                    "KayKit Dungeon Pack 1.1/Assets/gltf/valid_asset.gltf",
+                    "{}")
+                archive.writestr(
+                    "KayKit Complete V7/KayKit Dungeon Pack 1.1/Assets/gltf/valid_nested.gltf",
+                    "{}")
+            with zipfile.ZipFile(path) as archive:
+                table,index=p23.zip_index(archive)
+            self.assertEqual(len(table),4)
+            self.assertNotIn("unlicensed",index)
+            self.assertNotIn("wrapper_only",index)
+            self.assertEqual(index["valid_asset"][0]["pack"],"KayKit Dungeon Pack 1.1")
+            self.assertEqual(index["valid_nested"][0]["pack"],"KayKit Dungeon Pack 1.1")
+
     def test_never_replace_structural_contracts(self):
         paths=(
             "/models/mounts/valorsteed.glb",
