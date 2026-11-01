@@ -68,7 +68,7 @@ class P66P67Tests(unittest.TestCase):
 
     def test_facing_does_not_spin_mobile_camera(self):
         r=mod.patch_main(main_fixture())
-        self.assertIn("if (document.body.classList.contains('mobile-touch')) {",r)
+        self.assertIn("document.body.classList.contains('game-active')) {",r)
         self.assertIn('lastInterpFacing = interpFacing;',r)
         self.assertIn('return;\n    }\n    const next = updateFollowCameraYaw',r)
 
@@ -95,7 +95,7 @@ class P66P67Tests(unittest.TestCase):
 
     def test_cannot_repatch_or_build_over_existing_stage(self):
         r=mod.patch_main(main_fixture())
-        with self.assertRaisesRegex(RuntimeError,'P66_P67_ANCHOR_FREE_CAMERA_2'):
+        with self.assertRaisesRegex(RuntimeError,'P66_P67_ANCHOR_TAP_TARGET_CHASE_0'):
             mod.patch_main(r)
         self.assertIn("if (STAGE/CSS_PATH).exists()",SCRIPT.read_text())
         self.assertIn('P66_P67_REQUIRES_P65',SCRIPT.read_text())
