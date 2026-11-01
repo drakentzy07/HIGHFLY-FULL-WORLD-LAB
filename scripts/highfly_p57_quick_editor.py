@@ -178,11 +178,11 @@ def patch_studio(s):
   }
   private transform():void {""",
       "DRAG_FUNCTIONS")
-    # restore hidden roots when item selected and fix generated transform history
     s=once(s,
-      """    this.drafts.delete(e.id);this.populateTransform();this.showInfo();""",
-      """    this.drafts.delete(e.id);this.populateTransform();this.showInfo();""",
-      "ONE" ) if False else s
+      """      height:d.h,details:'Decoración original; origen ZONE1_PROPS/decorProps por posición. Collider r='+""",
+      """      width:d.hw?d.hw*2:undefined,depth:d.hd?d.hd*2:undefined,
+      height:d.h,details:'Decoración original; origen ZONE1_PROPS/decorProps por posición. Collider r='+""",
+      'DECOR_SUGGESTED_DIMENSIONS')
     return s
 
 def patch_view(source):
