@@ -75,7 +75,7 @@ body.mobile-touch.game-active #mobile-menu-anchor{
   box-shadow:0 0 0 1px rgba(128,91,229,.45),0 4px 15px rgba(0,0,0,.6)!important;
   pointer-events:auto!important;
 }
-body.mobile-touch.game-active #mobile-menu-anchor .mobile-label{
+body.mobile-touch.game-active #mobile-menu-anchor :is(.mobile-label,.ui-icon,.ui-icon-art){
   display:none!important;
 }
 body.mobile-touch.game-active #mobile-menu-anchor::after{
@@ -117,7 +117,7 @@ body.mobile-touch.game-active #mobile-extra-grid .mobile-btn{
   background:rgba(17,33,66,.86)!important;
   color:var(--hf-ink)!important;
 }
-body.mobile-touch.game-active #mobile-extra-grid :is(#mobile-donate,#mobile-steam-wishlist,#mobile-wocmarket,#mobile-daily-rewards){
+body.mobile-touch.game-active #mobile-extra-grid :is(#mobile-donate,#mobile-steam-wishlist,#mobile-wiki,#mobile-discord,#mobile-wocmarket,#mobile-daily-rewards){
   display:none!important;
 }
 /* Preserve the ring's own 4 actionable ability slots and all cooldown visuals.
