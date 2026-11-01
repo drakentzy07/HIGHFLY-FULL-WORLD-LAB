@@ -51,7 +51,7 @@ def inspect_glb(data):
     if magic!=b'glTF' or version!=2 or length!=len(data):
         raise RuntimeError('P64_INVALID_GLB_HEADER')
     chunkLen,kind=struct.unpack_from('<I4s',data,12)
-    if kind!=b'JSON' or not (12<chunkLen<len(data)-20):
+    if kind!=b'JSON' or not (0<chunkLen<=len(data)-20) or chunkLen%4!=0:
         raise RuntimeError('P64_INVALID_GLTF_JSON')
     gltf=json.loads(data[20:20+chunkLen])
     named={a.get('name') for a in gltf.get('animations',[])}
