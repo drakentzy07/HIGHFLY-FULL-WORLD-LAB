@@ -1,0 +1,21 @@
+name: HIGHFLY P58 individual editor tests
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - scripts/highfly_p58_individual_micro_editor.py
+      - tests/test_highfly_p58_individual_micro_editor.py
+      - .github/workflows/highfly-p58-individual-micro.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m py_compile scripts/highfly_p58_individual_micro_editor.py
+      - run: python -m unittest discover -s tests -p 'test_highfly_p58_individual_micro_editor.py' -v
