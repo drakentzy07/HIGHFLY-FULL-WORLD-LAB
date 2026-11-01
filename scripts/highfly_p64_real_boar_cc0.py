@@ -74,6 +74,8 @@ def replace_once(src,old,new,label):
     return src.replace(old,new,1)
 
 def edit_manifest(src):
+    if MARK in src or 'highfly_gobkit_boar_cc0.glb' in src:
+        raise RuntimeError('P64_ALREADY_APPLIED_MANIFEST')
     old=('  mob_boar: {\n'
          '    url: '+chr(96)+'$'+'{CREATURES}/wild_boar.glb'+chr(96)+',\n'
          '    height: 1.45,\n'
@@ -92,6 +94,10 @@ def edit_manifest(src):
     return replace_once(src,old,new,'BOAR_VISUAL_DEF')
 
 def edit_media(src):
+    # A previous patch must be rejected before looking up insertion anchors.
+    # The stable path check also catches a preexisting route added manually.
+    if MARK in src or "'models/creatures/highfly_gobkit_boar_cc0.glb'" in src:
+        raise RuntimeError('P64_ALREADY_APPLIED_MEDIA')
     # P39A + P39B legitimately list this crab URL in TWO distinct groups.
     # Anchor to P39B's unique provenance comment instead of the URL.
     # Insert a standalone allowlisted GLB inside the same array.
@@ -103,6 +109,8 @@ def edit_media(src):
        'DIRECT_MEDIA_ALLOWLIST')
 
 def edit_assets(src):
+    if MARK in src or "'models/creatures/highfly_gobkit_boar_cc0.glb'" in src:
+        raise RuntimeError('P64_ALREADY_APPLIED_ASSETS')
     return replace_once(src,
        "const HIGHFLY_P39B_MOB_CC0_URLS = new Set<string>([",
        "// "+MARK+": approved lazy-load model.\n"
