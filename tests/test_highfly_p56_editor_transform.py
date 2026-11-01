@@ -68,8 +68,8 @@ class P56EditorTests(unittest.TestCase):
     def test_offline_placeholder_hides_only_hologram(self):
         old="""import { currentRealmBuilder } from '../sim/content/realm_builders';
   let honoureeName = initialHonoureeName;
-    beam.name = \`\${GROUP_NAME}Beam\`;
-    panel.name = \`\${GROUP_NAME}Name\`;
+    beam.name = `${GROUP_NAME}Beam`;
+    panel.name = `${GROUP_NAME}Name`;
       honoureeName = name;
       // Re-bake rather than re-place:"""
         out=p56.patch_fx(old)
