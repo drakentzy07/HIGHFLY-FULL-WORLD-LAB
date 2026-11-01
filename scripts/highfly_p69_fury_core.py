@@ -51,10 +51,9 @@ export function installHighflyFuryPositionAim(hooks:HighflyFurySkillHooks):()=>v
   const buttons=[...document.querySelectorAll<HTMLButtonElement>(
     '#mobile-action-ring .mobile-action-slot[data-mobile-index]'
   )];
-  const active: {pointer:number;index:number;startX:number;startY:number;
-    skill:HighflyFuryPositionSkill;btn:HTMLButtonElement}|nullHolder={value:null};
-  // State holder permits clear/replace without multiple independent pointers.
-  const holder:{value:typeof active extends {value:infer T}?T:never}={value:null};
+  interface ActiveAim {pointer:number;index:number;startX:number;startY:number;
+    skill:HighflyFuryPositionSkill;btn:HTMLButtonElement}
+  const holder:{value:ActiveAim|null}={value:null};
   const cancel=document.createElement('div');
   cancel.id='highfly-fury-aim-cancel';
   cancel.textContent='✕  CANCELAR';
@@ -116,7 +115,9 @@ export function installHighflyFuryPositionAim(hooks:HighflyFurySkillHooks):()=>v
     }
   }
   const listeners: Array<{el:HTMLButtonElement;down:(e:PointerEvent)=>void}>=[];
-  buttons.forEach((btn,index)=>{
+  buttons.forEach((btn)=>{
+    const index=Number(btn.dataset.mobileIndex);
+    if(!Number.isInteger(index)||index<0||index>3)return;
     const onDown=(e:PointerEvent)=>down(e,index,btn);
     btn.addEventListener('pointerdown',onDown,true);
     btn.addEventListener('pointermove',move,true);
@@ -139,17 +140,6 @@ export function installHighflyFuryPositionAim(hooks:HighflyFurySkillHooks):()=>v
   };
 }
 """
-# Explicit simple state avoids infer/circular TS invalid types (validated by tests).
-TOUCH_CODE=TOUCH_CODE.replace(
-  """  const active: {pointer:number;index:number;startX:number;startY:number;
-    skill:HighflyFuryPositionSkill;btn:HTMLButtonElement}|nullHolder={value:null};
-  // State holder permits clear/replace without multiple independent pointers.
-  const holder:{value:typeof active extends {value:infer T}?T:never}={value:null};""",
-  """  interface ActiveAim {pointer:number;index:number;startX:number;startY:number;
-    skill:HighflyFuryPositionSkill;btn:HTMLButtonElement}
-  const holder:{value:ActiveAim|null}={value:null};"""
-)
-
 TAPS_CODE=r"""// HIGHFLY_P69_FURY_CORE: offline-only manual tap intent.
 // No damage here. Attack remains authoritative in auto_attack.ts's native
 // meleeSwing through the real hostility/range/LoS/status gates.
