@@ -6,7 +6,7 @@ Existing terrain tools and original editor remain intact outside ?hf_eastbrook_s
 Transforms are local preview plus exported/stored proposal, NOT sim/physics edits.
 """
 from __future__ import annotations
-import argparse,hashlib,json,shutil,subprocess,sys
+import argparse,hashlib,json,shutil,subprocess,sys,time
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -246,6 +246,31 @@ QUICK_CSS=r"""
 def checksum(path:Path)->str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
+def archive_incomplete_previous_backup():
+    """Keep failed P57 backup attempts; never delete or overwrite them.
+
+    Caller has already checked that the private stage is genuinely still P55
+    and all transform anchors are available. A successful P57 report is NOT a
+    stale attempt, so refuse to touch it.
+    """
+    if not OUT.exists() and not OUT.is_symlink():
+        return None
+    if OUT.is_symlink() or not OUT.is_dir():
+        raise RuntimeError('P57_REPORT_PATH_UNSAFE')
+    if (OUT / 'P57_STATUS.json').exists() or (OUT / 'P57_STATUS.json').is_symlink():
+        raise RuntimeError('P57_SUCCESS_REPORT_EXISTS_CHECK_STAGE_MANUALLY')
+    archive_dir=OUT.parent/'highfly-p57-preserved-attempts'
+    if archive_dir.is_symlink():
+        raise RuntimeError('P57_ARCHIVE_SYMLINK_UNSAFE')
+    archive_dir.mkdir(parents=True,exist_ok=True)
+    candidate=archive_dir/('highfly-p57-'+str(time.time_ns()))
+    if candidate.exists() or candidate.is_symlink():
+        raise RuntimeError('P57_ARCHIVE_COLLISION')
+    # An atomic directory rename on the same volume: NO files are deleted.
+    OUT.rename(candidate)
+    print('[HIGHFLY P57] Previous incomplete backup PRESERVED: '+str(candidate))
+    return candidate
+
 def run(apply=False):
     p9.preflight(p9.ORIGINAL,STAGE,p9.REPORT)
     originals={}
@@ -276,6 +301,7 @@ def run(apply=False):
     }
     if not apply:
         print('[HIGHFLY P57] '+json.dumps(result,ensure_ascii=False,indent=2));return result
+    archive_incomplete_previous_backup()
     backups=[]
     try:
         for rel in originals:
@@ -294,7 +320,7 @@ def run(apply=False):
     except BaseException:
         for path,backup in backups:
             if backup.is_file():shutil.copy2(backup,path)
-        print('[HIGHFLY P57] RED: private stage restored to P55',file=sys.stderr)
+        print('[HIGHFLY P57] RED: saved stage files restored; previous backups preserved',file=sys.stderr)
         raise
     OUT.mkdir(parents=True,exist_ok=True)
     result['mode']='BUILD_GREEN_BROWSER_UNVERIFIED'
