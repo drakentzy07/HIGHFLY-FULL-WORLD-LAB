@@ -12,7 +12,7 @@ class P52BTest(unittest.TestCase):
  def test_full_scene_bounds(self):
   self.assertIn("this.scene.traverse",p.TS)
   self.assertIn("bb.setFromObject(mesh)",p.TS)
-  self.assertIn("mesh.isInstancedMesh",p.TS)
+  self.assertIn("mesh instanceof THREE.InstancedMesh",p.TS)
   self.assertIn("hf_hide_giant",p.TS)
  def test_not_changed_by_default(self):
   self.assertIn("get('hf_audit_giants') === '1'",p.TS)
