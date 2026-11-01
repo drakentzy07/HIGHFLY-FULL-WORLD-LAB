@@ -1,0 +1,25 @@
+name: HIGHFLY P56 source-only tests
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - 'scripts/highfly_p56_editor_transform.py'
+      - 'tests/test_highfly_p56_editor_transform.py'
+      - '.github/workflows/highfly-p56-static-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Python source syntax
+        run: python -m py_compile scripts/highfly_p56_editor_transform.py
+      - name: P56 unit tests against shipped P55 script
+        run: python -m unittest discover -s tests -p 'test_highfly_p56_editor_transform.py' -v
