@@ -124,6 +124,52 @@ def digest(path):
         for buf in iter(lambda:f.read(1048576),b''):h.update(buf)
     return h.hexdigest()
 
+def analyze_source_overlays(media_source, assets_source, manifest_source):
+    """Read-only report. Duplicate legacy URLs are warnings, not deletes."""
+    from collections import Counter
+    import re
+    media_urls=re.findall(r"'(models/[A-Za-z0-9_./-]+\\.glb)'",media_source)
+    duplicates={key:count for key,count in Counter(media_urls).items() if count>1}
+    return {
+      'p39bMediaMarkerPresent':'HIGHFLY_P39B_ALL_MOBS_CC0_LAZY_LOAD' in media_source,
+      'p39bLazyLoaderPresent':'HIGHFLY_P39B_MOB_CC0_URLS' in assets_source,
+      'originalBoarVisualPresent':'wild_boar.glb' in manifest_source,
+      'existingP64Markers':{name:MARK in source for name,source in (
+        (MEDIA,media_source),(ASSETS,assets_source),(MANIFEST,manifest_source))},
+      'directMediaOccurrences':len(media_urls),
+      'duplicateDirectMediaPaths':duplicates,
+      'note':'Existing duplicate URLs from earlier overlays are NOT removed automatically.'
+    }
+
+def stage_doctor():
+    """Check actual Codespaces stage without network, writes or model downloads."""
+    p9.preflight(O,S,p9.REPORT)
+    source={}
+    for rel in (MEDIA,ASSETS,MANIFEST):
+        path=S/rel
+        if not path.is_file() or path.is_symlink():
+            raise RuntimeError('P64_DOCTOR_SOURCE_MISSING '+rel)
+        source[rel]=path.read_text('utf8')
+    report=analyze_source_overlays(source[MEDIA],source[ASSETS],source[MANIFEST])
+    report['phase']='P64_STAGE_DOCTOR'
+    report['mode']='READ_ONLY_NO_DOWNLOAD_NO_MODIFICATION'
+    report['p63Installed']='HIGHFLY_P63_COMBAT_C1' in (
+        S/'src/sim/combat/auto_attack.ts').read_text('utf8')
+    report['boarFileAlreadyPresent']=(S/DEST).exists()
+    # Validate all source edits ON COPIES, not the actual game files.
+    if any(report['existingP64Markers'].values()) or report['boarFileAlreadyPresent']:
+        report['patchReady']=False
+        report['blocker']='P64 already installed or partially present; inspect before retry.'
+    else:
+        edit_media(source[MEDIA])
+        edit_assets(source[ASSETS])
+        edit_manifest(source[MANIFEST])
+        report['patchReady']=report['p63Installed']
+        if not report['p63Installed']:
+            report['blocker']='P63 missing, do not run P64.'
+    print('[HIGHFLY P64 DOCTOR] '+json.dumps(report,indent=2,ensure_ascii=False))
+    return report
+
 def run(apply=False):
     p9.preflight(O,S,p9.REPORT)
     originals={}
@@ -193,4 +239,11 @@ def run(apply=False):
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--apply',action='store_true')
-    run(p.parse_args().apply)
+    p.add_argument('--check-stage',action='store_true',
+                   help='Read-only audit of staged overlays and all P64 source anchors')
+    args=p.parse_args()
+    if args.check_stage:
+        if args.apply: p.error('--check-stage cannot be combined with --apply')
+        stage_doctor()
+    else:
+        run(args.apply)
