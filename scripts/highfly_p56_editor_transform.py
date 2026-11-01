@@ -13,6 +13,8 @@ OUT=ROOT/".workspace/reports/highfly-p56"
 STUDIO="src/editor/highfly_eastbrook_studio.ts"
 CSS="src/editor/highfly_eastbrook_studio.css"
 PROPS="src/render/props.ts"
+TOWN="src/render/eastbrook_town.ts"
+FX="src/render/realm_builder_monument_fx.ts"
 MARK="HIGHFLY_P56_EDITABLE_STUDIO"
 
 def once(s,a,b,label):
@@ -305,6 +307,80 @@ def patch_props(s):
     registerHideable(g, obbFootprint(b.x, b.z, b.w / 2, b.d / 2, b.rot, roofY));"""
     return once(s,anchor,modified,"FREE_BUILDING")
 
+def patch_town(s):
+    if MARK in s:raise RuntimeError('P56_ALREADY_APPLIED_TOWN')
+    old="""  const monumentBody = buildRealmBuilderMonumentBody(monumentTemplate.raw, monumentSeat);
+  group.add(monumentBody.group);"""
+    new="""  const monumentBody = buildRealmBuilderMonumentBody(monumentTemplate.raw, monumentSeat);
+  // HIGHFLY_P56_EDITABLE_STUDIO: P55 measured 13.84 x 23.98 x 14.56
+  // on a monument authored at 5.79 x 7.6 x 5.38. Correct the offending
+  // GLB BODY VISUAL to the official dimensions; do not move its sim entity,
+  // collision cylinder, click proxy, FX or far impostor.
+  const p56Body = monumentBody.group.children[0];
+  if (p56Body) {
+    p56Body.updateWorldMatrix(true,true);
+    const before=new THREE.Box3().setFromObject(p56Body);
+    const size=before.getSize(new THREE.Vector3());
+    if (size.y > monumentSeat.nativeHeight * 1.5) {
+      const k=Math.min(
+        monumentSeat.nativeWidth/Math.max(1e-4,size.x),
+        monumentSeat.nativeHeight/Math.max(1e-4,size.y),
+        monumentSeat.nativeDepth/Math.max(1e-4,size.z));
+      if (Number.isFinite(k) && k>0 && k<1) {
+        p56Body.scale.multiplyScalar(k);
+        p56Body.updateMatrixWorld(true);
+        const after=new THREE.Box3().setFromObject(p56Body);
+        const center=after.getCenter(new THREE.Vector3());
+        p56Body.position.x += monumentSeat.x-center.x;
+        p56Body.position.y += monumentSeat.groundY-after.min.y;
+        p56Body.position.z += monumentSeat.z-center.z;
+        p56Body.updateMatrixWorld(true);
+        console.info('[HIGHFLY P56] Real monument GLB corrected; source box',size.toArray(),
+          'uniform correction',k,'target height',monumentSeat.nativeHeight);
+      }
+    }
+  }
+  group.add(monumentBody.group);"""
+    return once(s,old,new,'MONUMENT_BODY')
+
+def patch_fx(s):
+    if MARK in s:raise RuntimeError('P56_ALREADY_APPLIED_FX')
+    s=once(s,
+      "import { currentRealmBuilder } from '../sim/content/realm_builders';",
+      "import { currentRealmBuilder, isPlaceholderRealmBuilder } from '../sim/content/realm_builders';",
+      'PLACEHOLDER_IMPORT')
+    s=once(s,
+      "  let honoureeName = initialHonoureeName;",
+      """  let honoureeName = initialHonoureeName;
+  // HIGHFLY_P56_EDITABLE_STUDIO: offline has no named winner. Keep the service
+  // and plaque but don't show a fake gold beam saying 'Tu nombre aquí'.
+  // A real honour (live or explicit in tests) enables the projections again.
+  let p56Named = !(isPlaceholderRealmBuilder(currentRealmBuilder()) &&
+    initialHonoureeName === displayRealmBuilderName(currentRealmBuilder()));""",
+      'PLACEHOLDER_BOOL')
+    s=once(s,
+      "    beam.name = `${GROUP_NAME}Beam`;",
+      "    beam.name = `${GROUP_NAME}Beam`;
+    beam.visible = p56Named;",
+      'BEAM_HIDE')
+    s=once(s,
+      "    panel.name = `${GROUP_NAME}Name`;",
+      "    panel.name = `${GROUP_NAME}Name`;
+    panel.visible = p56Named;",
+      'NAME_HIDE')
+    s=once(s,
+      """      honoureeName = name;
+      // Re-bake rather than re-place:""",
+      """      honoureeName = name;
+      p56Named = true;
+      for (const child of group.children) {
+        if (child.name === `${GROUP_NAME}Beam` || child.name === `${GROUP_NAME}Name`)
+          child.visible = true;
+      }
+      // Re-bake rather than re-place:""",
+      'RESTORE_WINNER')
+    return s
+
 STYLE=r"""
 /* HIGHFLY_P56_EDITABLE_STUDIO, reversible in-memory transform controls */
 #hf-studio-p55 .hf-p56-edits{
@@ -323,20 +399,22 @@ def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def run(apply=False):
     p9.preflight(p9.ORIGINAL,STAGE,p9.REPORT)
     old={}
-    for rel in (STUDIO,CSS,PROPS):
+    for rel in (STUDIO,CSS,PROPS,TOWN,FX):
         f=STAGE/rel
         if not f.is_file() or f.is_symlink():raise RuntimeError('P56_STAGE_MISSING '+rel)
         old[rel]=f.read_text(encoding='utf8')
     if 'HIGHFLY_P55_EXISTING_EDITOR_STUDIO' not in old[STUDIO]:
         raise RuntimeError('P56_REQUIRES_P55')
     updates={STUDIO:patch_studio(old[STUDIO]),CSS:old[CSS]+"\n"+STYLE,
-             PROPS:patch_props(old[PROPS])}
+             PROPS:patch_props(old[PROPS]),TOWN:patch_town(old[TOWN]),FX:patch_fx(old[FX])}
     result={'phase':'P56_EASTBROOK_EDITOR_EDITABLE','mode':'DRY_RUN',
        'source':'P55 installed existing editor',
        'features':'original houses, free buildings, decor, monument body/FX separately, safe standalone meshes',
        'tools':'click, hide, restore, X/Z, yaw, scale, revert, export diagnostic JSON',
        'worldSimulationSaveQuestCollidersChanged':False,
-       'batchDeletionEnabled':False,'runtimeBrowserVerified':False}
+       'batchDeletionEnabled':False,'runtimeBrowserVerified':False,
+       'monument':'body resized to canonical envelope only if giant >1.5x',
+       'placeholderName':'no fake winner beam; restores on real award'}
     if not apply:
        print('[HIGHFLY P56] '+json.dumps(result,ensure_ascii=False,indent=2));return result
     backups=[]
