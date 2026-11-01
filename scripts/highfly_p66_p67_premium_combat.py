@@ -237,7 +237,8 @@ def patch_main(s):
       """    // HIGHFLY_P66_P67_COMBAT_FEEL_PREMIUM: manual camera and movement
     // are independent on touch. Follow-body yaw made LEFT joystick
     // movement rotate the whole camera, which is not an action RPG feel.
-    if (document.body.classList.contains('mobile-touch')) {
+    if (document.body.classList.contains('mobile-touch') &&
+        document.body.classList.contains('game-active')) {
       lastInterpFacing = interpFacing;
       return;
     }
