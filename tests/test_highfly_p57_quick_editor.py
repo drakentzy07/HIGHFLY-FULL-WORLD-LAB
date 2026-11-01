@@ -1,6 +1,6 @@
 """P57 contract tests: inject directly into P55, never apply P56 first."""
 from __future__ import annotations
-import importlib.util,sys,types,unittest,tempfile
+import importlib.util,sys,types,unittest,tempfile,re
 from unittest.mock import patch
 from pathlib import Path
 
@@ -31,6 +31,20 @@ class P57QuickEditorTests(unittest.TestCase):
         self.assertEqual(s.count('class HighflyEastbrookStudio'),1)
         self.assertEqual(s.count('beginDrag(clientX:number'),1)
         with self.assertRaises(RuntimeError):p57.patch_studio(s)
+
+    def test_no_duplicate_constructor_lexical_bindings(self):
+        # Rolldown previously rejected two `const header` declarations in the
+        # SAME editor constructor, even though Python patch fixtures were green.
+        ts=p57.patch_studio(p55.STUDIO_TS)
+        start=ts.index('  constructor(')
+        end=ts.index('  private button(',start)
+        constructor=ts[start:end]
+        decls=re.findall(r'^    const ([A-Za-z_$][A-Za-z0-9_$]*)\\s*=',constructor,re.M)
+        self.assertTrue(decls, 'constructor declarations were not found')
+        self.assertEqual(len(decls),len(set(decls)),
+            f'Duplicate top-level constructor bindings: {decls}')
+        self.assertIn("const quickHeader=document.createElement('strong')",constructor)
+        self.assertEqual(constructor.count('const header=document.createElement'),1)
 
     def test_editor_view_pointer_bridge(self):
         source="""// HIGHFLY_P55_EXISTING_EDITOR_STUDIO
