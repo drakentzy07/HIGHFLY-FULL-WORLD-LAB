@@ -59,7 +59,7 @@ class P64Tests(unittest.TestCase):
         self.assertIn('highfly_gobkit_boar_cc0.glb',changed)
         self.assertIn('HIGHFLY_P64_REAL_BOAR_CC0',changed)
         self.assertNotIn('wild_boar.glb',changed)
-        with self.assertRaisesRegex(RuntimeError,'BOAR_VISUAL_DEF_0'):
+        with self.assertRaisesRegex(RuntimeError,'P64_ALREADY_APPLIED_MANIFEST'):
             p64.edit_manifest(changed)
     def test_media_and_lazy_load_once(self):
         # P39A and P39B each legitimately include the SAME crab GLB.
@@ -78,8 +78,17 @@ class P64Tests(unittest.TestCase):
         self.assertIn('highfly_gobkit_boar_cc0.glb',b)
         self.assertEqual(a.count('highfly_gobkit_boar_cc0.glb'),1)
         self.assertIn('HIGHFLY_P64_REAL_BOAR_CC0',a)
-        with self.assertRaisesRegex(RuntimeError,'DIRECT_MEDIA_ALLOWLIST_0'):
+        with self.assertRaisesRegex(RuntimeError,'P64_ALREADY_APPLIED_MEDIA'):
             p64.edit_media(a)
+        with self.assertRaisesRegex(RuntimeError,'P64_ALREADY_APPLIED_ASSETS'):
+            p64.edit_assets(b)
+    def test_rejects_existing_asset_without_marker(self):
+        fixture=(
+          "  // HIGHFLY_P39B_ALL_MOBS_CC0_LAZY_LOAD: CC0 VERIFIED stage assets referenced by mob visuals.\n"
+          "  'models/creatures/highfly_gobkit_boar_cc0.glb',\n"
+        )
+        with self.assertRaisesRegex(RuntimeError,'P64_ALREADY_APPLIED_MEDIA'):
+            p64.edit_media(fixture)
     def test_media_without_p39b_provenance_fails_closed(self):
         with self.assertRaisesRegex(RuntimeError,'DIRECT_MEDIA_ALLOWLIST_0'):
             p64.edit_media("  'models/creatures/crab_ability_anims.glb',")
