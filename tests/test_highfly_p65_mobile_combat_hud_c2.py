@@ -22,7 +22,8 @@ class P65Tests(unittest.TestCase):
          '<span id="mobile-more-title" data-i18n="hud.core.mobileMore">More</span>\n'
         )
     def mobile(self):
-        return ('''interface MobileControlCallbacks {
+        return ('''import { buildMobileMenuControl, type MobileMenuControl } from '../ui/hud/menu';
+interface MobileControlCallbacks {
   onCycleTarget(): void;
 }
 function onSwipeLookEnd(){
@@ -52,6 +53,8 @@ function onSwipeLookEnd(){
         self.assertIn("this.bindButton('mobile-menu-anchor'",m)
         self.assertIn("document.body.classList.add('mobile-more-open');",m)
         self.assertIn("this.menuControl = null;",m)
+        self.assertIn("import type { MobileMenuControl }",m)
+        self.assertNotIn("buildMobileMenuControl, type",m)
         self.assertIn("target.closest('#mobile-menu-anchor')",m)
 
     def test_world_tap_uses_real_entity_and_sim(self):
