@@ -1,0 +1,21 @@
+name: HIGHFLY P65 Mobile Combat HUD C2
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - scripts/highfly_p65_mobile_combat_hud_c2.py
+      - tests/test_highfly_p65_mobile_combat_hud_c2.py
+      - .github/workflows/highfly-p65-mobile-combat-hud.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-hud-and-native-input-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m py_compile scripts/highfly_p65_mobile_combat_hud_c2.py
+      - run: python -m unittest discover -s tests -p 'test_highfly_p65_mobile_combat_hud_c2.py' -v
