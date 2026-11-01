@@ -1,0 +1,28 @@
+name: HIGHFLY P57 quick editor integrity
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - scripts/highfly_p55_private_editor_studio.py
+      - scripts/highfly_p56_editor_transform.py
+      - scripts/highfly_p57_quick_editor.py
+      - tests/test_highfly_p56_editor_transform.py
+      - tests/test_highfly_p57_quick_editor.py
+      - .github/workflows/highfly-p57-quick-editor.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile all Python installers
+        run: python -m py_compile scripts/highfly_p56_editor_transform.py scripts/highfly_p57_quick_editor.py
+      - name: Test original P55 -> P56 source helpers
+        run: python -m unittest discover -s tests -p 'test_highfly_p56_editor_transform.py' -v
+      - name: Test direct P55 -> P57 quick editor
+        run: python -m unittest discover -s tests -p 'test_highfly_p57_quick_editor.py' -v
