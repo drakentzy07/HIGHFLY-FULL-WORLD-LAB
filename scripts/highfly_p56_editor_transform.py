@@ -360,13 +360,13 @@ def patch_fx(s):
       'PLACEHOLDER_BOOL')
     s=once(s,
       "    beam.name = `${GROUP_NAME}Beam`;",
-      "    beam.name = `${GROUP_NAME}Beam`;
-    beam.visible = p56Named;",
+      """    beam.name = `${GROUP_NAME}Beam`;
+    beam.visible = p56Named;""",
       'BEAM_HIDE')
     s=once(s,
       "    panel.name = `${GROUP_NAME}Name`;",
-      "    panel.name = `${GROUP_NAME}Name`;
-    panel.visible = p56Named;",
+      """    panel.name = `${GROUP_NAME}Name`;
+    panel.visible = p56Named;""",
       'NAME_HIDE')
     s=once(s,
       """      honoureeName = name;
