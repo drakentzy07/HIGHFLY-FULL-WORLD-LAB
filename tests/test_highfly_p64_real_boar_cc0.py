@@ -69,7 +69,8 @@ class P64Tests(unittest.TestCase):
         self.assertEqual(a.count('highfly_gobkit_boar_cc0.glb'),1)
     def test_no_changes_to_gameplay_and_assets_unpublished(self):
         source=(D/'highfly_p64_real_boar_cc0.py').read_text('utf8')
-        self.assertNotIn("src/sim/combat/auto_attack.ts')",source)
+        self.assertIn('for rel in (MEDIA,ASSETS,MANIFEST):',source)
+        self.assertNotIn('source.write_text(',source)
         self.assertIn("DEST='public/models/creatures/highfly_gobkit_boar_cc0.glb'",source)
         self.assertIn('P64_SOURCE_ANCHOR_',source)
         self.assertIn('P64_ALREADY_APPLIED',source)
