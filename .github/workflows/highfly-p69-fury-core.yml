@@ -1,0 +1,23 @@
+name: HIGHFLY P69 FURY Core (Native Tap and Skill Aim)
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - scripts/highfly_p69_fury_core.py
+      - tests/test_highfly_p69_fury_core.py
+      - .github/workflows/highfly-p69-fury-core.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile installer
+        run: python -m py_compile scripts/highfly_p69_fury_core.py
+      - name: Test FURY integration and rollback contracts
+        run: python -m unittest discover -s tests -p 'test_highfly_p69_fury_core.py' -v
