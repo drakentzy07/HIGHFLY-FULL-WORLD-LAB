@@ -1,0 +1,23 @@
+name: HIGHFLY P66 P67 Premium HUD and Combat Feel
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - scripts/highfly_p66_p67_premium_combat.py
+      - tests/test_highfly_p66_p67_premium_combat.py
+      - .github/workflows/highfly-p66-p67-premium-combat.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-action-hud-and-combat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check syntax
+        run: python -m py_compile scripts/highfly_p66_p67_premium_combat.py
+      - name: Test native HUD, soft-target, free-camera and rollback
+        run: python -m unittest discover -s tests -p 'test_highfly_p66_p67_premium_combat.py' -v
