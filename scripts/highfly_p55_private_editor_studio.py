@@ -18,6 +18,7 @@ OUT=ROOT/".workspace/reports/highfly-p55"
 MARK="HIGHFLY_P55_EXISTING_EDITOR_STUDIO"
 APP="src/editor/app.ts"
 VIEW="src/editor/3d/viewport.ts"
+PROPS="src/render/props.ts"
 STUDIO="src/editor/highfly_eastbrook_studio.ts"
 STUDIO_CSS="src/editor/highfly_eastbrook_studio.css"
 LOAD_CSS="public/highfly/p55_loading.css"
@@ -134,12 +135,13 @@ export class HighflyEastbrookStudio {
     // The weekly vault may be named differently in the renderer;
     // do not silently guess a root for a shared batch.
     if(e.kind==='vault') return scene.getObjectByName('eastbrookBuilding:'+e.id) ?? null;
+    if(e.kind==='decor') return scene.getObjectByName('highflyDecor:'+e.model+'@'+format(e.x)+','+format(e.z)) ?? null;
     return null;
   }
   private rootForHit(obj:THREE.Object3D):THREE.Object3D|null {
     let cursor:THREE.Object3D|null=obj;
     while(cursor) {
-      if(cursor.userData?.eastbrookBuildingId) return cursor;
+      if(cursor.userData?.eastbrookBuildingId || cursor.name.startsWith('highflyDecor:')) return cursor;
       if(cursor.name==='eastbrookRealmBuilderMonumentFxBody' ||
          cursor.name==='eastbrookRealmBuilderMonumentFx') return cursor;
       if(cursor.name==='eastbrookTownRebuild') return null;
@@ -186,10 +188,21 @@ export class HighflyEastbrookStudio {
       -(clientY-rect.top)/Math.max(1,rect.height)*2+1);
     this.ray.setFromCamera(this.ndc,this.renderer.camera);
     const town=this.renderer.scene.getObjectByName('eastbrookTownRebuild');
-    const hits=town?this.ray.intersectObject(town,true):[];
+    const decorRoots:THREE.Object3D[]=[];
+    this.renderer.scene.traverse(o=>{
+      if(o.name.startsWith('highflyDecor:'))decorRoots.push(o);
+    });
+    const hits=this.ray.intersectObjects(town?[town,...decorRoots]:decorRoots,true);
     for(const h of hits) {
       const tagged=this.rootForHit(h.object);
       if(tagged) {
+        const source=tagged.userData?.highflySourceDecor as
+          {key:string;x:number;z:number}|undefined;
+        if(source){
+          const decor=this.entries.find(e=>e.kind==='decor'&&e.model===source.key&&
+            Math.abs(e.x-source.x)<0.001&&Math.abs(e.z-source.z)<0.001);
+          if(decor){this.select(decor,tagged,h.object);return;}
+        }
         const id=String(tagged.userData?.eastbrookBuildingId??'');
         const kind=tagged.name.includes('RealmBuilder')?'monument':'building';
         const found=this.entries.find(e=>e.id===(kind==='monument'?
@@ -427,6 +440,28 @@ def patch_view(source):
       """      if (this.hfStudio) this.hfStudio.pick(ev.clientX, ev.clientY);
       else this.hooks.onTap(ev.clientX, ev.clientY, this.surfaceAt(ev.clientX, ev.clientY));""","PICK")
     return source
+def patch_props(source):
+    if MARK in source:raise RuntimeError("P55_ALREADY_APPLIED_PROPS")
+    old="""    g.rotation.y = d.rot ?? 0;
+    group.add(shadowed(g));
+    if (d.r) {"""
+    new="""    g.rotation.y = d.rot ?? 0;
+    // HIGHFLY_P55_EXISTING_EDITOR_STUDIO: only private editor preview.
+    // Keep Eastbrook decor separated from static batch so a click maps back
+    // to the source model and exact authored x/z. No game build changes.
+    if (typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('hf_eastbrook_studio') === '1' &&
+        d.x >= -120 && d.x <= 50 && d.z >= -160 && d.z <= -48) {
+      g.name = 'highflyDecor:' + d.key + '@' + Number(d.x.toFixed(2)) + ',' + Number(d.z.toFixed(2));
+      g.userData.highflySourceDecor = { key: d.key, x: d.x, z: d.z };
+      g.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) keepFromMerge.add(obj);
+      });
+    }
+    group.add(shadowed(g));
+    if (d.r) {"""
+    return replace(source,old,new,'DECOR_SOURCE_TAGS')
+
 def patch_html(source):
     if MARK in source:raise RuntimeError("P55_ALREADY_APPLIED_HTML")
     if 'HIGHFLY_P54_EASTBROOK_SOURCE_CORRECTION' not in source:
@@ -438,17 +473,18 @@ def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def run(apply=False):
     p9.preflight(p9.ORIGINAL,STAGE,p9.REPORT)
     originals={}
-    for rel in (APP,VIEW,HTML):
+    for rel in (APP,VIEW,PROPS,HTML):
       f=STAGE/rel
       if not f.is_file() or f.is_symlink():raise RuntimeError('P55_PRIVATE_EDITOR_FILE_MISSING '+rel)
       originals[rel]=f.read_text(encoding='utf8')
-    changed={APP:patch_app(originals[APP]),VIEW:patch_view(originals[VIEW]),HTML:patch_html(originals[HTML])}
+    changed={APP:patch_app(originals[APP]),VIEW:patch_view(originals[VIEW]),
+             PROPS:patch_props(originals[PROPS]),HTML:patch_html(originals[HTML])}
     new={STUDIO:STUDIO_TS,STUDIO_CSS:STUDIO_STYLE,LOAD_CSS:LOADING_STYLE}
     for rel in new:
       if (STAGE/rel).exists() or (STAGE/rel).is_symlink():raise RuntimeError('P55_OUTPUT_EXISTS '+rel)
     status={'phase':'P55_EXISTING_EDITOR_EASTBROOK_STUDIO','mode':'DRY_RUN',
       'editor':'/editor.html?hf_eastbrook_studio=1','realOfficialWorld':True,
-      'pick':'11 official buildings, weekly vault, monument, source decor records',
+      'pick':'11 official buildings, weekly vault, monument, and individually tagged Eastbrook decorProps',
       'previewOnly':'hide identifiable render groups with restoration, export JSON',
       'unknownBatch':'never delete without stable ID',
       'loading':'small centered background + native bar in reserved bottom band',
