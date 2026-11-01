@@ -203,7 +203,7 @@ def patch_html(s):
     # Keep the official menu's stable ID but allow its text/i18n markup
     # to evolve. Remove the translation attribute so HIGHFLY remains branded.
     import re
-    title_pattern=r'<span\\s+id="mobile-more-title"[^>]*>[^<]*</span>'
+    title_pattern=r'<span\s+id="mobile-more-title"[^>]*>[^<]*</span>'
     s,count=re.subn(title_pattern,
       '<span id="mobile-more-title">HIGHFLY · MENÚ</span>',s,count=2)
     if count!=1:raise RuntimeError('P65_ANCHOR_MENU_TITLE_COUNT_'+str(count))
