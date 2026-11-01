@@ -47,6 +47,29 @@ function onSwipeLookEnd(){
         self.assertEqual(h.count('id="mobile-jump"'),1)
         self.assertEqual(h.count('id="mobile-passive"'),1)
 
+    def test_stylesheet_uses_head_not_legacy_p48_link(self):
+        # Reproduces P65_ANCHOR_STYLESHEET_COUNT_0 from the REAL P64
+        # assembled stage. P48 marker may survive while its link changes.
+        html=self.html().replace(
+            '<link rel="stylesheet" href="/highfly/p48.css" />',
+            '<link href="/highfly/p48.css?v=1" rel="stylesheet">'
+        )
+        html=html.replace(
+            '<span id="mobile-more-title" data-i18n="hud.core.mobileMore">More</span>',
+            '<span id="mobile-more-title" class="panel-text">Acciones</span>'
+        )
+        out=p65.patch_html(html)
+        self.assertEqual(out.count('/highfly/p65.css'),1)
+        self.assertEqual(out.count('id="mobile-more-title"'),1)
+        self.assertIn('HIGHFLY · MENÚ',out)
+        self.assertEqual(out.count('</head>'),1)
+
+    def test_rejects_missing_or_duplicate_html_head(self):
+        with self.assertRaisesRegex(RuntimeError,'P65_ANCHOR_HEAD_STYLESHEET_COUNT_0'):
+            p65.patch_html(self.html().replace('</head>','</no-head>'))
+        with self.assertRaisesRegex(RuntimeError,'P65_ANCHOR_HEAD_STYLESHEET_COUNT_2'):
+            p65.patch_html(self.html().replace('</head>','</head></head>'))
+
     def test_menu_routes_to_actual_bound_modal(self):
         m=p65.patch_mobile(self.mobile())
         self.assertIn("this.bindButton('mobile-passive', () => this.callbacks.onSpellbook());",m)
