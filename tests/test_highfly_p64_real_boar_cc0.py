@@ -62,11 +62,28 @@ class P64Tests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'BOAR_VISUAL_DEF_0'):
             p64.edit_manifest(changed)
     def test_media_and_lazy_load_once(self):
-        a=p64.edit_media("  'models/creatures/crab_ability_anims.glb',")
+        # P39A and P39B each legitimately include the SAME crab GLB.
+        # The old P64 installer failed with count=2, before modifying stage.
+        fixture=(
+          "export const MEDIA=[\n"
+          "  'models/creatures/crab_ability_anims.glb',\n"
+          "  // HIGHFLY_P39B_ALL_MOBS_CC0_LAZY_LOAD: CC0 VERIFIED stage assets referenced by mob visuals.\n"
+          "  'models/creatures/crab_ability_anims.glb',\n"
+          "];\n"
+        )
+        a=p64.edit_media(fixture)
         b=p64.edit_assets("const HIGHFLY_P39B_MOB_CC0_URLS = new Set<string>([")
+        self.assertEqual(a.count('models/creatures/crab_ability_anims.glb'),2)
         self.assertIn('highfly_gobkit_boar_cc0.glb',a)
         self.assertIn('highfly_gobkit_boar_cc0.glb',b)
         self.assertEqual(a.count('highfly_gobkit_boar_cc0.glb'),1)
+        self.assertIn('HIGHFLY_P64_REAL_BOAR_CC0',a)
+        with self.assertRaisesRegex(RuntimeError,'DIRECT_MEDIA_ALLOWLIST_0'):
+            p64.edit_media(a)
+    def test_media_without_p39b_provenance_fails_closed(self):
+        with self.assertRaisesRegex(RuntimeError,'DIRECT_MEDIA_ALLOWLIST_0'):
+            p64.edit_media("  'models/creatures/crab_ability_anims.glb',")
+
     def test_no_changes_to_gameplay_and_assets_unpublished(self):
         source=(D/'highfly_p64_real_boar_cc0.py').read_text('utf8')
         self.assertIn('for rel in (MEDIA,ASSETS,MANIFEST):',source)
