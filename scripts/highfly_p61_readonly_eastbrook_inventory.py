@@ -95,7 +95,7 @@ def scan_npc_calls(block: str) -> list[dict]:
                 if esc: esc = False
                 elif c == "\\": esc = True
                 elif c == quote: quote = None
-            elif c in ("'", '"', "\`"): quote = c
+            elif c == chr(39) or c == chr(34): quote = c
             elif c == "(": depth += 1
             elif c == ")":
                 depth -= 1
