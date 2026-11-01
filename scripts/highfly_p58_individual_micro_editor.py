@@ -221,7 +221,18 @@ def run(apply=False):
     if not apply:
         print('[HIGHFLY P58] '+json.dumps(status,indent=2,ensure_ascii=False));return
     if OUT.exists() or OUT.is_symlink():
-        raise RuntimeError('P58_BACKUP_EXISTS: do not overwrite; diagnose first')
+        # A previous failed attempt can leave backups; NEVER delete/overwrite.
+        if OUT.is_symlink() or not OUT.is_dir():
+            raise RuntimeError('P58_BACKUP_PATH_UNSAFE')
+        if (OUT/'P58_STATUS.json').exists():
+            raise RuntimeError('P58_SUCCESSFUL_INSTALL_EXISTS')
+        hist=OUT.parent/'highfly-p58-preserved-attempts'
+        if hist.is_symlink():raise RuntimeError('P58_ARCHIVE_UNSAFE')
+        hist.mkdir(parents=True,exist_ok=True)
+        target=hist/('attempt-'+str(time.time_ns()))
+        if target.exists():raise RuntimeError('P58_ARCHIVE_COLLISION')
+        OUT.rename(target)
+        print('[HIGHFLY P58] Previous failed backup PRESERVED: '+str(target))
     backups=[]
     try:
         for rel in old:
