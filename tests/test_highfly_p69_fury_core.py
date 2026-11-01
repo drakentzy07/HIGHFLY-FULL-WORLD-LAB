@@ -131,7 +131,7 @@ class FuryTests(unittest.TestCase):
         self.assertIn("pointer-events:none",p69.CSS_CODE)
     def test_fail_closed_on_drift(self):
         with self.assertRaisesRegex(RuntimeError,"P69_ANCHOR_NATIVE_360_SIGN_COUNT_0"):
-            p69.patch_main(self.main().replace("Math.cos(yaw)+horizontal", "Math.cos(yaw)-horizontal"))
+            p69.patch_main(self.main().replace("const worldX=vertical*Math.sin(yaw)+horizontal*Math.cos(yaw);", "const worldX=other;"))
         with self.assertRaisesRegex(RuntimeError,"P69_ANCHOR_RING_MANUAL_ATK_COUNT_0"):
             p69.patch_ring(self.ring().replace("const hfTap", "const tapChanged"))
         with self.assertRaisesRegex(RuntimeError,"P69_ANCHOR_SIM_REQUEST_COUNT_0"):
