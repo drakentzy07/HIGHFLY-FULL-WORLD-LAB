@@ -32,8 +32,6 @@ import * as THREE from 'three';
 import type { Renderer } from '../render/renderer';
 import { BUILTIN_WORLD } from '../sim/data';
 import { EASTBROOK_LAYOUT } from '../sim/eastbrook_layout';
-import { terrainHeight } from '../sim/world';
-import { WORLD_SEED } from '../sim/world_seed';
 import './highfly_eastbrook_studio.css';
 
 type Kind='building'|'vault'|'monument'|'decor';
@@ -278,6 +276,8 @@ export class HighflyEastbrookStudio {
   private restore():void {
     const id=this.selected?.id;
     if(!id)return;
+    const nodes=this.hidden.get(id) ?? [];
+    for(const root of nodes)root.visible=true;
     this.hidden.delete(id);this.drafts.delete(id);
     this.showInfo();
   }
