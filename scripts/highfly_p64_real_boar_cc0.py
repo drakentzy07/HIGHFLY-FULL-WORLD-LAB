@@ -92,9 +92,13 @@ def edit_manifest(src):
     return replace_once(src,old,new,'BOAR_VISUAL_DEF')
 
 def edit_media(src):
-    return replace_once(src,"  'models/creatures/crab_ability_anims.glb',",
-       "  'models/creatures/crab_ability_anims.glb',\n"
-       "  // "+MARK+": CC0 Gobkit pack verified by source manifest.\n"
+    # P39A + P39B legitimately list this crab URL in TWO distinct groups.
+    # Anchor to P39B's unique provenance comment instead of the URL.
+    # Insert a standalone allowlisted GLB inside the same array.
+    marker="  // HIGHFLY_P39B_ALL_MOBS_CC0_LAZY_LOAD: CC0 VERIFIED stage assets referenced by mob visuals."
+    return replace_once(src,marker,
+       marker+"\n"
+       "  // "+MARK+": CC0 Gobkit free animal pack, downloaded only after validation.\n"
        "  'models/creatures/highfly_gobkit_boar_cc0.glb',",
        'DIRECT_MEDIA_ALLOWLIST')
 
