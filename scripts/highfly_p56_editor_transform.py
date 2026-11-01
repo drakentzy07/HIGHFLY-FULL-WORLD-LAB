@@ -151,17 +151,23 @@ def patch_studio(s):
           kind==='monument'?'eastbrook_realm_builder_monument':id));""","PICK_KIND")
     s=once(s,
       """    const hits=this.ray.intersectObjects(town?[town,...decorRoots]:decorRoots,true);""",
-      """    // First pick only exact source-tagged objects, then opt into a
-    // full-scene fallback for untagged mini-houses/meshes. Never claim a
-    // static batch is a discrete editable object.
-    const exact=this.ray.intersectObjects(town?[town,...decorRoots]:decorRoots,true);
-    const hits=exact.length?exact:this.ray.intersectObjects(this.renderer.scene.children,true);""","SCENE_RAY")
+      """    // Raycast actual editor scene so a mini-house drawn by another
+    // renderer system is selectable; only on click, not in frame loop.
+    const hits=this.ray.intersectObjects(this.renderer.scene.children,true);""","SCENE_RAY")
     s=once(s,
       """      // Unknown/batched mesh: report geometry but forbid unsafe deletion.
       const mat=h.object instanceof THREE.Mesh""",
       """      // Untagged, standalone small mesh: runtime-only inspection/edit. A
       // large batch cannot be hidden or moved safely without provenance.
-      if(h.object instanceof THREE.Mesh && !(h.object instanceof THREE.InstancedMesh)) {
+      let propRoot:THREE.Object3D|null=h.object;
+      let isProp=false;
+      while(propRoot){
+        if(propRoot.userData?.renderCategory==='props'){isProp=true;break;}
+        propRoot=propRoot.parent;
+      }
+      if(isProp && h.object instanceof THREE.Mesh &&
+         !(h.object instanceof THREE.InstancedMesh) &&
+         !h.object.name.startsWith('far-bake:')) {
         const bounds=new THREE.Box3().setFromObject(h.object);
         const sz=bounds.getSize(new THREE.Vector3());
         const c=bounds.getCenter(new THREE.Vector3());
@@ -262,6 +268,8 @@ def patch_studio(s):
     for(const roots of this.hidden.values())for(const root of roots)root.visible=true;
     this.panel.remove();this.hidden.clear();this.drafts.clear();
   }""","DISPOSE")
+    s=once(s,'      this.showInfo();this.renderList();return;',
+      '      this.showInfo();this.renderList();continue;','SKIP_UNKNOWN_BATCH')
     return s
 
 def patch_props(s):
