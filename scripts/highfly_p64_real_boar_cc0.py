@@ -128,7 +128,7 @@ def analyze_source_overlays(media_source, assets_source, manifest_source):
     """Read-only report. Duplicate legacy URLs are warnings, not deletes."""
     from collections import Counter
     import re
-    media_urls=re.findall(r"'(models/[A-Za-z0-9_./-]+\\.glb)'",media_source)
+    media_urls=re.findall(r"'(models/[A-Za-z0-9_./-]+\.glb)'",media_source)
     duplicates={key:count for key,count in Counter(media_urls).items() if count>1}
     return {
       'p39bMediaMarkerPresent':'HIGHFLY_P39B_ALL_MOBS_CC0_LAZY_LOAD' in media_source,
