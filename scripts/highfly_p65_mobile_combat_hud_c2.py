@@ -204,6 +204,10 @@ def patch_html(s):
     return s
 
 def patch_mobile(s):
+    s=once(s,
+      "import { buildMobileMenuControl, type MobileMenuControl } from '../ui/hud/menu';",
+      "import type { MobileMenuControl } from '../ui/hud/menu';",
+      'REMOVE_UNUSED_OLD_MENU_IMPORT')
     s=once(s,'  onCycleTarget(): void;',
       '  onCycleTarget(): void;\n'
       '  /** Tap on real enemy mesh; false keeps two-tap camera recenter. */\n'
