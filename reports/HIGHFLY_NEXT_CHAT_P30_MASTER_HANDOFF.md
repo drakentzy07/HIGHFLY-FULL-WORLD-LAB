@@ -328,3 +328,30 @@ python3 scripts/highfly_p45d_big_batch.py --apply
 
 ## P45D DRY-RUN HOTFIX 22:54Z
 User executed P45D command three times; all repeated attempts stopped at initial precheck BEFORE --apply. P45 tests 12/12 OK, but `p44.run(False)` raised `NameError: name 'datetime' is not defined` on building audit report timestamp. Because shell uses `&&`, no P44/P45 writes, no checkpoint, no Vite build, stable P43 unaffected. Fixed tracked `scripts/highfly_p44_world_visuals.py` by importing `from datetime import datetime, timezone` (commit 712347d40ce7ed9d530c04c341f1480c35a7169e); new regression unit test in `tests/test_highfly_p44_world_visuals.py` checks imported symbols (commit bf2cc92109671385525d5c3c728426b4af066eb2). Await fresh user Codespaces run after `git pull --ff-only`. Do NOT run prior P44 individually or restore backups. If another new red emerges, inspect that traceback. No claims about successful P45 yet.
+
+## P48 — Diagnóstico de video Android y movilidad real
+Video de 350 segundos recibido del usuario, muestras 00:00-05:48 (1030x480) inspeccionadas cuadro a cuadro el 2026-11-01. Se ven HIGHFLY P35 badge/log, mobile browser address bar, intro/creator, juegos/tutorial, barras de carga con franja negra muy grande, HUD touch con joystick y skills parcialmente vacías, aviso de fullscreen, NPC interactivos, lobos visibles, jabalíes sin modelo, final Eastbrook con bloque gigante.
+
+**Hallazgos de raíz confirmados**:
+1. `.workspace/highfly-p46/apply_p46.py` genera `public/highfly/official/highfly_loading_bg.png` con un **rectángulo negro horneado en los píxeles** (porción inferior central ~440-745). P47 CSS no podía quitarlo; solo cambio del asset o una capa de arte encima puede ocultarlo. P48 agrega capa inferior con splash oficial ya instalado y gradiente. P48 posiciona `.ls-progress` por dimensiones fijas con `#ls-fill` y `#ls-status` nativos, `#ls-tip` en altura fija: los consejos no deben mover la barra. Esto es solución visual provisional, el asset editado correctamente sigue siendo ideal.
+2. `src/game/mobile_controls.ts` `onMoveMove` detecta `isMoveAutorunPush(rawY)` y activa `input.setAutorun(true)` al sobrepasar la zona del joystick. P48 elimina esa rama de forma localizada, conserva vector 360° y reset autorun.
+3. `src/sim/player_motion.ts` no tenía salto doble: solo permite `inp.jump && (onGround||coyote)`. P48 agrega segundo salto de impulso real (88% velocidad vertical), exige *nueva pulsación* con WeakMap input-held, solo una vez en el aire, no consume dos por mantener presionado.
+4. P48 agrega `dash?:boolean` opcional a `MoveInput`, latch en Input, botón `mobile-dodge` enlazado a MobileControls (press-first) y dash 0.18 s×2.6 running speed, cooldown 1.15s, **pasa por el mismo solver de colisiones**; no teleporta. Es primera movilidad FURY, falta combo real, skills y animación.
+5. Ascenso voltereta: `visual.ts` aplica `CLIMB_BODY_PITCH` + `head.rotation.x += ...`; P48 limita pitch del cuerpo ±0.55 rad y del head bone ±0.5 rad en dos caminos. No verificadas animaciones visuales Android después del cambio.
+6. Quaternius wolf CC0 ya visible. Jabalí `mob_boar` referencia `wild_boar.glb` y `WILD_BOAR` clips del asset personalizado de Claude; no hay procedencia CC0 validada para copiarlo al proyecto público. NO poner un lobo disfrazado de jabalí. Buscar en ZIP KayKit complete privado boar/pig o fuente CC0 validada, rig-compatible, y probar.
+7. Fullscreen automático al cargar en Chrome normal es imposible sin gesto de usuario. P48 solicita fullscreen desde **primer gesto real** botón inicio; para abrir sin barra del browser desde instante cero, se necesita instalar PWA manifest fullscreen en pantalla de inicio o app Android con orientación bloqueada; no prometer fullscreen forzado al abrir URL.
+8. Tutorial sigue normal. `Abrir tus bolsas` aún requiere revisar DOM tutorial para habilitar tap real sobre pista; no falso clic. Iconos y skills: algunos slots vacíos antes de aprender/equipar, investigar contenido vs CSS. P35 log/QA CSS escondidos de forma no destructiva, source overlay puede usar otro ID y seguir visible. El aviso ~05:02 no ha sido identificado con certeza.
+
+**P48 pushed**:
+- `scripts/highfly_p48_fury_mobile.py`, `tests/test_highfly_p48_fury_mobile.py` rama `highfly-origin-commercial-p0`. Se verificaron estáticamente todos los anclajes contra upstream pin: 1 match por cada uno. **AÚN NO ejecutado en Codespaces**; tests fixture y P9 build sin verificar. P48 solo aplica si P47 instalado; copia respaldo de seis archivos Stage, escribe CSS/JS, corre P9 build, restaura en error.
+- Una vez actualizado Codespace:
+```bash
+cd /workspaces/HIGHFLY-FULL-WORLD-LAB
+git pull --ff-only && \
+python3 -m unittest discover -s tests -p 'test_highfly_p48*.py' && \
+python3 scripts/highfly_p48_fury_mobile.py && \
+python3 scripts/highfly_p48_fury_mobile.py --apply
+```
+No volver a ejecutar P45/P46/P47 --apply. Si verde, reiniciar npm run preview -- --host 0.0.0.0 --port 4174 --strictPort, probar Android, joystick (no autorun), doble salto dos taps, evasión y visual loading. Si red, corregir usando traceback, no retry automático. No declarar P48 "full FURY 2.0" ni boar fixed.
+
+**Attention possible followups**: verify P48 JS fullscreen initial gesture happens after P46 script creates landing, or fallback document listener handles gesture. No PWA manifest change yet. Double jump/dash are local stage simulation modifications. For long-term synchronized network movement, wire optional inputs into network server protocol and client prediction, rather than publishing P48 raw as online feature. FURY hit chain, real skills and targeting still require deeper integration.
