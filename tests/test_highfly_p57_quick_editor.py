@@ -1,6 +1,7 @@
 """P57 contract tests: inject directly into P55, never apply P56 first."""
 from __future__ import annotations
-import importlib.util,sys,types,unittest
+import importlib.util,sys,types,unittest,tempfile
+from unittest.mock import patch
 from pathlib import Path
 
 S=Path(__file__).resolve().parents[1]/'scripts'
@@ -59,6 +60,34 @@ class P57QuickEditorTests(unittest.TestCase):
         self.assertIn('p56Body.scale.multiplyScalar(k)',p56.patch_town(
           """  const monumentBody = buildRealmBuilderMonumentBody(monumentTemplate.raw, monumentSeat);
   group.add(monumentBody.group);"""))
+
+    def test_failed_attempt_backup_archived_without_deletion(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            old=root/'highfly-p57'
+            original=old/'backups/src/editor/highfly_eastbrook_studio.ts'
+            original.parent.mkdir(parents=True)
+            original.write_text('old protected P55 backup',encoding='utf8')
+            with patch.object(p57,'OUT',old):
+                archived=p57.archive_incomplete_previous_backup()
+            self.assertIsNotNone(archived)
+            self.assertFalse(old.exists())
+            self.assertTrue(archived.is_dir())
+            self.assertEqual(
+                (archived/'backups/src/editor/highfly_eastbrook_studio.ts').read_text(),
+                'old protected P55 backup')
+            self.assertIn('highfly-p57-preserved-attempts',str(archived))
+
+    def test_completed_report_is_never_archived(self):
+        with tempfile.TemporaryDirectory() as td:
+            old=Path(td)/'highfly-p57'
+            old.mkdir()
+            report=old/'P57_STATUS.json'
+            report.write_text('{"mode":"BUILD_GREEN_BROWSER_UNVERIFIED"}')
+            with patch.object(p57,'OUT',old):
+                with self.assertRaisesRegex(RuntimeError,'P57_SUCCESS_REPORT_EXISTS'):
+                    p57.archive_incomplete_previous_backup()
+            self.assertTrue(report.is_file())
 
     def test_fail_closed(self):
         with self.assertRaises(RuntimeError):p57.patch_studio('not P55')
