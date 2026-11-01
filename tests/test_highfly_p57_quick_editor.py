@@ -39,7 +39,7 @@ class P57QuickEditorTests(unittest.TestCase):
         start=ts.index('  constructor(')
         end=ts.index('  private button(',start)
         constructor=ts[start:end]
-        decls=re.findall(r'^    const ([A-Za-z_$][A-Za-z0-9_$]*)\\s*=',constructor,re.M)
+        decls=re.findall(r'^    const ([A-Za-z_$][A-Za-z0-9_$]*)\s*=',constructor,re.M)
         self.assertTrue(decls, 'constructor declarations were not found')
         self.assertEqual(len(decls),len(set(decls)),
             f'Duplicate top-level constructor bindings: {decls}')
