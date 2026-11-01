@@ -93,6 +93,30 @@ class P64Tests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,'DIRECT_MEDIA_ALLOWLIST_0'):
             p64.edit_media("  'models/creatures/crab_ability_anims.glb',")
 
+    def test_readonly_stage_doctor_counts_legacy_duplicates(self):
+        media=(
+          "  'models/creatures/crab_ability_anims.glb',\n"
+          "  // HIGHFLY_P39B_ALL_MOBS_CC0_LAZY_LOAD: CC0 VERIFIED stage assets referenced by mob visuals.\n"
+          "  'models/creatures/crab_ability_anims.glb',\n"
+          "  'models/creatures/other.glb',\n"
+        )
+        assets="const HIGHFLY_P39B_MOB_CC0_URLS = new Set<string>(["
+        manifest="  mob_boar: { url: "+chr(96)+"$"+"{CREATURES}/wild_boar.glb"+chr(96)+" };"
+        result=p64.analyze_source_overlays(media,assets,manifest)
+        self.assertEqual(result['duplicateDirectMediaPaths'],{
+          'models/creatures/crab_ability_anims.glb':2})
+        self.assertEqual(result['directMediaOccurrences'],3)
+        self.assertTrue(result['p39bMediaMarkerPresent'])
+        self.assertTrue(result['p39bLazyLoaderPresent'])
+        self.assertTrue(result['originalBoarVisualPresent'])
+        self.assertFalse(any(result['existingP64Markers'].values()))
+
+    def test_doctor_reports_partial_p64_without_removing(self):
+        media="  // HIGHFLY_P64_REAL_BOAR_CC0: old partial marker\n"
+        result=p64.analyze_source_overlays(media,"","")
+        self.assertTrue(result['existingP64Markers'][p64.MEDIA])
+        self.assertEqual(result['directMediaOccurrences'],0)
+
     def test_no_changes_to_gameplay_and_assets_unpublished(self):
         source=(D/'highfly_p64_real_boar_cc0.py').read_text('utf8')
         self.assertIn('for rel in (MEDIA,ASSETS,MANIFEST):',source)
