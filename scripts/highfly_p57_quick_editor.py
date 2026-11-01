@@ -46,11 +46,11 @@ def patch_studio(s):
       """    edits.append(this.btnTransform,this.btnReset);
     // A quick-action pad like Sims is PRIMARY; numeric transforms are optional.
     const pad=document.createElement('section');pad.className='hf-p57-pad';
-    const header=document.createElement('strong');
-    header.textContent='MOVER · GIRAR · TAMAÑO';
+    const quickHeader=document.createElement('strong');
+    quickHeader.textContent='MOVER · GIRAR · TAMAÑO';
     const note=document.createElement('span');
     note.textContent='Arrastrá con el mouse. Clic derecho para orbitar.';
-    pad.append(header,note);
+    pad.append(quickHeader,note);
     const btn=(name:string,action:()=>void,tip:string)=>{
       const b=this.button(name,action);b.title=tip;b.className='hf-p57-action';pad.append(b);
     };
