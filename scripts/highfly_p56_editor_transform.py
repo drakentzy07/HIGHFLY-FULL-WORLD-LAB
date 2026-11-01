@@ -270,6 +270,20 @@ def patch_studio(s):
   }""","DISPOSE")
     s=once(s,'      this.showInfo();this.renderList();return;',
       '      this.showInfo();this.renderList();continue;','SKIP_UNKNOWN_BATCH')
+    s=once(s,
+      """    const town=this.renderer.scene.getObjectByName('eastbrookTownRebuild');
+    const decorRoots:THREE.Object3D[]=[];
+    this.renderer.scene.traverse(o=>{
+      if(o.name.startsWith('highflyDecor:') ||
+         o.name.startsWith('highflyFreeBuilding:'))decorRoots.push(o);
+    });
+    // Raycast actual editor scene so a mini-house drawn by another
+    // renderer system is selectable; only on click, not in frame loop.
+    const hits=this.ray.intersectObjects(this.renderer.scene.children,true);""",
+      """    // Raycast only on user click. Source-tagged props/extra houses remain
+    // identifiable; unrelated game objects are not automatically editable.
+    const hits=this.ray.intersectObjects(this.renderer.scene.children,true);""",
+      'NO_UNUSED_PICK_VARIABLES')
     return s
 
 def patch_props(s):
