@@ -153,7 +153,7 @@ def patch_studio(s):
     s=once(s,
       """         cursor.name.startsWith('highflyFreeBuilding:')) return cursor;""",
       """         cursor.name.startsWith('highflyFreeBuilding:') ||
-         cursor.name.startsWith('highflyMicro:')) return cursor;""",
+         cursor.userData?.highflyMicroId) return cursor;""",
       'TAG_MICRO')
     s=once(s,
       """        const source=tagged.userData?.highflySourceDecor as
