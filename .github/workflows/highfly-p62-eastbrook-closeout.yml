@@ -1,0 +1,21 @@
+name: HIGHFLY P62 Eastbrook licensed closeout
+on:
+  push:
+    branches: [highfly-origin-commercial-p0]
+    paths:
+      - scripts/highfly_p62_closeout_market_npc.py
+      - tests/test_highfly_p62_closeout_market_npc.py
+      - .github/workflows/highfly-p62-eastbrook-closeout.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m py_compile scripts/highfly_p62_closeout_market_npc.py
+      - run: python -m unittest discover -s tests -p 'test_highfly_p62_closeout_market_npc.py' -v
