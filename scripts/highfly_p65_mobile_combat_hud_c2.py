@@ -192,15 +192,21 @@ def patch_html(s):
       '<button type="button" id="mobile-passive" title="Pasivas: abrir habilidades" aria-label="Pasivas: abrir habilidades" data-icon="spellbook">PASIVA</button>\n'
       '<button type="button" id="mobile-jump" data-i18n-title=',
       'REAL_PASSIVE_ENTRY')
-    s=once(s,
-      '<link rel="stylesheet" href="/highfly/p48.css" />',
-      '<link rel="stylesheet" href="/highfly/p48.css" />\n'
-      '<!-- '+MARK+': integrated mobile HUD stylesheet -->\n'
-      '<link rel="stylesheet" href="/highfly/p65.css" />',
-      'STYLESHEET')
-    s=once(s,'<span id="mobile-more-title" data-i18n="hud.core.mobileMore">More</span>',
-      '<span id="mobile-more-title">HIGHFLY · MENÚ</span>',
-      'MENU_TITLE')
+    # HEAD is the structural HTML insertion point. P48's CSS may have
+    # been re-authored/reordered in later HIGHFLY stages; don't require
+    # a verbatim P48 <link> as an insertion anchor.
+    s=once(s,'</head>',
+      '<!-- '+MARK+': mobile controls use genuine game callbacks -->\n'
+      '<link rel="stylesheet" href="/highfly/p65.css" />\n'
+      '</head>',
+      'HEAD_STYLESHEET')
+    # Keep the official menu's stable ID but allow its text/i18n markup
+    # to evolve. Remove the translation attribute so HIGHFLY remains branded.
+    import re
+    title_pattern=r'<span\\s+id="mobile-more-title"[^>]*>[^<]*</span>'
+    s,count=re.subn(title_pattern,
+      '<span id="mobile-more-title">HIGHFLY · MENÚ</span>',s,count=2)
+    if count!=1:raise RuntimeError('P65_ANCHOR_MENU_TITLE_COUNT_'+str(count))
     return s
 
 def patch_mobile(s):
