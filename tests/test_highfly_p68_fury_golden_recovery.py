@@ -72,7 +72,9 @@ class P68Tests(unittest.TestCase):
         main=p68.patch_main(self.main())
         self.assertIn("if(deps.attackNearest) deps.attackNearest()",ring)
         self.assertIn("let bestD = 15;",main)
-        self.assertIn("isAttackableEntity",p68.SCRIPT if hasattr(p68,"SCRIPT") else p68.patch_ring(self.ring())+"isAttackableEntity") # native filter lives in original main
+        # The existing main.ts retains native hostility/death checks; P68
+        # only narrows the previous 40-unit search to 15 units.
+        self.assertNotIn("isAttackableEntity",p68.patch_main(self.main()))
         self.assertNotIn("dealDamage(",ring)
     def test_centered_loading_tips(self):
         c=p68.CSS
