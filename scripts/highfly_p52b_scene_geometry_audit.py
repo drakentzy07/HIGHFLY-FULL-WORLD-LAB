@@ -68,7 +68,7 @@ TS=r"""
         );
         candidates.push({
           index:-1,name:mesh.name||'(sin nombre)',hierarchy:chain.join(' > '),
-          geometry:mesh.geometry?.type??'?',kind:mesh.isInstancedMesh?'INSTANCED':'MESH',
+          geometry:mesh.geometry?.type??'?',kind:mesh instanceof THREE.InstancedMesh?'INSTANCED':'MESH',
           material,x:+center.x.toFixed(1),y:+center.y.toFixed(1),
           z:+center.z.toFixed(1),
           width:+size.x.toFixed(1),height:+size.y.toFixed(1),
