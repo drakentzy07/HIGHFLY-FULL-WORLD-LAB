@@ -36,7 +36,7 @@ def patch_town(s):
   const emissive: THREE.BufferGeometry[] = [];
   const add = (url: string, matrix: THREE.Matrix4): void => {
     const template = templates.get(url);
-    if (!template) throw new Error("Eastbrook town template is missing: " + url);
+    if (!template) throw new Error(`Eastbrook town template is missing: ${url}`);
     addPlacedGeometry(opaque, template.opaque, matrix);
     addPlacedGeometry(emissive, template.emissive, matrix);
   };""",
@@ -50,7 +50,7 @@ def patch_town(s):
   let activeSource: {id:string;kind:string;model:string;x:number;z:number}|null=null;
   const add = (url: string, matrix: THREE.Matrix4): void => {
     const template = templates.get(url);
-    if (!template) throw new Error("Eastbrook town template is missing: " + url);
+    if (!template) throw new Error(`Eastbrook town template is missing: ${url}`);
     if(studioMode && activeSource){
       const source=activeSource;
       const g=new THREE.Group();
