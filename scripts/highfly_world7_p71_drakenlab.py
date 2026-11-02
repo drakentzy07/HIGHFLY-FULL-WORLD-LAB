@@ -36,7 +36,7 @@ GAME_INSERT = (
     "  if (import.meta.env.VITE_HIGHFLY_OFFLINE_LAB === '1' && offlineSim &&\n"
     "      isDrakenLabEnabled(location.search)) {\n"
     "    mountDrakenLab({\n"
-    "      currentClass: offlineSim.player.cls,\n"
+    "      currentClass: offlineSim.player.templateId as PlayerClass,\n"
     "      playerName: offlineSim.player.name,\n"
     "      onChoose: (nextClass) => restartDrakenLab(nextClass, offlineSim.player.name),\n"
     "    });\n"
