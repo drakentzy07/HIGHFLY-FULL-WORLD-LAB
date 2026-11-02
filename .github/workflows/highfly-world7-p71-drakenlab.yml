@@ -26,3 +26,5 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_highfly_world7_codespace_audit.py' -v
       - name: P71 DrakenLAB guarded installer tests
         run: python -m unittest discover -s tests -p 'test_highfly_world7_p71_drakenlab.py' -v
+      - name: P71 nine-class visual matrix safety
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_p71_visual_matrix.py' -v
