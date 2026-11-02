@@ -1,0 +1,28 @@
+name: HIGHFLY WORLD7 P71 nine classes DrakenLAB
+
+on:
+  push:
+    branches:
+      - highfly-world7-p71-nine-classes-drakenlab-20261102
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drakenlab-private-installer-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout HIGHFLY branch
+        uses: actions/checkout@v4
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: P70 class domain contracts
+        run: node --test tests/highfly_hunter_universal_p70.test.mjs
+      - name: P70 private-source static audit tests
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_codespace_audit.py' -v
+      - name: P71 DrakenLAB guarded installer tests
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_p71_drakenlab.py' -v
