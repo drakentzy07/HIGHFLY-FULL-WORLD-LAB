@@ -28,3 +28,5 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_highfly_world7_p71_drakenlab.py' -v
       - name: P71 nine-class visual matrix safety
         run: python -m unittest discover -s tests -p 'test_highfly_world7_p71_visual_matrix.py' -v
+      - name: P71B class-source repair safety
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_p71b_fix_class_field.py' -v
