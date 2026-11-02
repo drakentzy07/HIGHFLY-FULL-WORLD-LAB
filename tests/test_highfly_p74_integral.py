@@ -19,16 +19,16 @@ class P74Safety(unittest.TestCase):
    root=Path(td)
    original=root/"reference"
    stage=root/"stage"
-   for src in ("models/approved.glb","models/project_only.glb","models/ambiguous.glb"):
+   for src in ("models/creatures/approved.glb","models/creatures/project_only.glb","models/creatures/ambiguous.glb"):
     f=original/"public"/src
     f.parent.mkdir(parents=True,exist_ok=True)
     f.write_bytes(b"glTFdummy")
    specs={
-    "/models/approved.glb":[{"exactRawSource":"tmp/asset_src/quaternius/approved.glb",
+    "/models/creatures/approved.glb":[{"exactRawSource":"tmp/asset_src/quaternius/approved.glb",
       "sourceProvider":"Quaternius","upstreamSpec":"specs/a.json"}],
-    "/models/project_only.glb":[{"exactRawSource":"tmp/asset_src/unknown_pack/project.glb",
+    "/models/creatures/project_only.glb":[{"exactRawSource":"tmp/asset_src/unknown_pack/project.glb",
       "sourceProvider":"UNATTRIBUTED_OR_PROJECT_ART","upstreamSpec":"specs/b.json"}],
-    "/models/ambiguous.glb":[{"exactRawSource":"tmp/asset_src/quaternius/amb.glb",
+    "/models/creatures/ambiguous.glb":[{"exactRawSource":"tmp/asset_src/quaternius/amb.glb",
       "sourceProvider":"Quaternius","upstreamSpec":"specs/c.json"},
      {"exactRawSource":"tmp/asset_src/craftpix/amb.glb",
       "sourceProvider":"UNATTRIBUTED_OR_PROJECT_ART","upstreamSpec":"specs/d.json"}]
@@ -38,7 +38,7 @@ class P74Safety(unittest.TestCase):
      patch.object(p74.p25,"credited",return_value={"Quaternius":True}),\
      patch.object(p74.p21,"check_binary",return_value=True):
     approved,blocked,_,_=p74.make_proof_index()
-   self.assertEqual([r["url"] for r in approved],["/models/approved.glb"])
+   self.assertEqual([r["url"] for r in approved],["/models/creatures/approved.glb"])
    self.assertEqual(blocked["AMBIGUOUS_CONVERSION_SPEC"],1)
    self.assertEqual(blocked["PROJECT_ONLY_OR_LICENSE_UNVERIFIED_OR_OWNED_SOURCE_REQUIRED"],1)
 
