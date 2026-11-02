@@ -11,6 +11,8 @@ on:
       - scripts/highfly_p43_live_entry_diagnostic.mjs
       - scripts/highfly_p43_android_runtime_diag.py
       - tests/test_highfly_p43_android_runtime_diag.py
+      - scripts/highfly_p43_browser_module_probe.py
+      - tests/test_highfly_p43_browser_module_probe.py
       - .github/workflows/highfly-p43-isolated-recovery.yml
   workflow_dispatch:
 permissions:
@@ -30,3 +32,4 @@ jobs:
           python -m unittest discover -s tests -p 'test_highfly_p43_native_editor_offline.py' -v
           node --check scripts/highfly_p43_live_entry_diagnostic.mjs
           python -m unittest discover -s tests -p 'test_highfly_p43_android_runtime_diag.py' -v
+          python -m unittest discover -s tests -p 'test_highfly_p43_browser_module_probe.py' -v
