@@ -4,6 +4,8 @@ on:
     branches:
       - highfly-world7-p64-entry-ui-v2-20261102
     paths:
+      - scripts/highfly_p69_clean_loader_observe.py
+      - tests/test_highfly_p69_clean_loader_observe.py
       - scripts/highfly_world7_p69_isolated_recovery.py
       - tests/test_highfly_world7_p69_isolated_recovery.py
       - scripts/highfly_p43_isolated_recovery.py
@@ -35,6 +37,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_highfly_p43_isolated_recovery.py' -v
           python -m unittest discover -s tests -p 'test_highfly_world7_p69_isolated_recovery.py' -v
+          python -m unittest discover -s tests -p 'test_highfly_p69_clean_loader_observe.py' -v
           python -m unittest discover -s tests -p 'test_highfly_p43_native_editor_offline.py' -v
           node --check scripts/highfly_p43_live_entry_diagnostic.mjs
           node --check scripts/highfly_p43_import_graph_audit.mjs
