@@ -63,12 +63,17 @@ try {
       viewport:{width:915,height:412},deviceScaleFactor:2,
       isMobile:true,hasTouch:true,locale:'es-AR'
     });
-    let errors=[],failed=[];
+    let errors=[],failed=[],badResponses=[];
     page.on('pageerror',e=>errors.push(brief(e.stack||e)));
     page.on('console',m=>{if(m.type()==='error')errors.push('CONSOLE '+m.text().slice(0,350));});
-    page.on('requestfailed',q=>{if(failed.length<18)failed.push(q.url().slice(0,200)+' '+q.failure()?.errorText);});
+    page.on('requestfailed',q=>{if(failed.length<25)failed.push(q.url().slice(0,200)+' '+q.failure()?.errorText);});
+    page.on('response',res=>{if(res.status()>=400 && badResponses.length<25)badResponses.push({status:res.status(),url:res.url().slice(0,210)});});
     await page.goto(URL,{waitUntil:'domcontentloaded',timeout:30000});
-    await page.waitForTimeout(2500);
+    try {
+      await page.waitForFunction(() =>
+        document.getElementById('server-select')?.dataset.mode==='offline',
+        {timeout:12000});
+    } catch { await page.waitForTimeout(1000); }
     const inspect=()=>page.evaluate(()=>{
       const ids=['start-screen','btn-play','server-select','server-select-trigger',
         'server-select-value','server-select-menu','server-opt-online','server-opt-offline',
@@ -101,6 +106,13 @@ try {
     }
     report.browserErrors=errors.slice(0,20);
     report.failedRequests=failed;
+    report.badResponses=badResponses;
+    report.offlineAutomaticallySelected=report.mobile?.['server-select']?.mode==='offline';
+    report.offlineOptionHidden=report.mobile?.['server-opt-offline']?.hiddenAttr;
+    report.nativeMainLikelyBooted=report.offlineAutomaticallySelected===true;
+    report.diagnosisHint=report.offlineAutomaticallySelected
+      ? 'Offline selected in the browser; if Android still shows Online, compare browser URL/cache/proxy.'
+      : 'Offline not selected: inspect browserErrors, failedRequests, badResponses, and mobile selector state.';
     report.mobileBrowserVerified=true;
     await page.close();
   }finally{await browser.close();}
