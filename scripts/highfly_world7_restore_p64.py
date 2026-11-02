@@ -258,7 +258,7 @@ def run(apply:bool=False, *, stage:Path=STAGE, repo:Path=ROOT,
         result["sourceSha256"]={
             rel:sha(read(stage/rel,stage,rel)) for rel in REPLACE
         }
-        STATUS.write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\n","utf8")
+        (out / "P64_CLEAN_STATUS.json").write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\n","utf8")
         return result
     except BaseException:
         for rel,data in current.items():
