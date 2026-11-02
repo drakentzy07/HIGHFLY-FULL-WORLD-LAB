@@ -1,0 +1,19 @@
+name: HIGHFLY P64 Clean Recovery (read-only tests)
+on:
+  push:
+    branches:
+      - highfly-world7-clean-p64-20261102
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  protected-p64-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: P64 restore protected chain + rollback tests
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_restore_p64.py' -v
