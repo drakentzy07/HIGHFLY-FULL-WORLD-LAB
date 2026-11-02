@@ -12,7 +12,9 @@ spec.loader.exec_module(bundle)
 
 class BundleTest(unittest.TestCase):
  def test_local_gate_mode_and_build_output_scope(self):
-  self.assertIn("return isDev || import.meta.env.MODE === 'highfly-clean-private-offline';",bundle.LOCAL)
+  self.assertIn("name:'highfly-private-offline-only'",bundle.CONFIG_BODY)
+  self.assertIn("return 'export function isOfflineModeAvailable(isDev){return true;}'",bundle.CONFIG_BODY)
+  self.assertIn("source==='./game/offline_mode_gate'",bundle.CONFIG_BODY)
   self.assertIn(".highfly-private-offline-dist",bundle.CONFIG_BODY)
   self.assertIn("rollupOptions",bundle.CONFIG_BODY)
   self.assertIn("svelte()",bundle.CONFIG_BODY)
@@ -28,7 +30,9 @@ class BundleTest(unittest.TestCase):
  def test_no_public_publish_or_original_code_mutation(self):
   src=(ROOT/"scripts/highfly_clean_private_offline_bundle.py").read_text("utf8")
   self.assertIn('"publishApproved":False',src)
-  self.assertIn('GATE.write_text(old,"utf8")',src)
+  self.assertNotIn('GATE.write_text(',src)
+  self.assertIn('old_gate_hash=digest(GATE)',src)
+  self.assertIn('CONFIG.write_text(CONFIG_BODY,"utf8")',src)
   self.assertIn('shutil.rmtree(OUT)',src)
   self.assertNotIn("git push",src)
 
