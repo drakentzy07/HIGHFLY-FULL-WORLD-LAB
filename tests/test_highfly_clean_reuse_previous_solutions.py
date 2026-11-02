@@ -21,6 +21,14 @@ class PreviousFixAuditTests(unittest.TestCase):
   self.assertIn('models/chars/players/mage.glb',m.PATHS)
   self.assertNotEqual(m.PATHS.index('models/chars/modular/warrior_modular.glb'),
    m.PATHS.index('models/chars/players/knight.glb'))
+ def test_bom_encoded_p30_csv_is_readable(self):
+  with tempfile.TemporaryDirectory() as root:
+   file=Path(root)/'P30_ALL_MEDIA_AND_USAGE.csv'
+   file.write_text('path,status\\nmodels/props/fence.glb,CC0\\n',encoding='utf-8-sig')
+   rows=m.rows_for_csv(file,'models/props/fence.glb')
+   self.assertEqual(len(rows),1)
+   self.assertEqual(rows[0]['path'],'models/props/fence.glb')
+
  def test_unsafe_paths_rejected_and_no_copy(self):
   self.assertTrue(m.safe_rel('models/props/fence.glb'))
   for value in ('../outside.glb','/models/props/fence.glb','models/../../secret.glb','bad&name.glb'):
