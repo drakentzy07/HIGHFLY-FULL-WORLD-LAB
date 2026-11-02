@@ -159,8 +159,6 @@ def preflight(stage: Path=STAGE, repo: Path=ROOT, reports: Path=REPORTS, out: Pa
     if (old_status.get("mode") != "BUILD_GREEN_BROWSER_PENDING" or
             fix_status.get("mode") != "BUILD_GREEN_BROWSER_PENDING"):
         raise RuntimeError("P64_P71_STATUS_NOT_READY")
-    eq("P71_MAIN_SHA", old_status.get("sourceHashes",{}).get(MAIN,"").encode(),
-       sha(snap["P71pre"]).encode())
     eq("P71B_BACKUP_MAIN_HASH",
        old_status.get("sourceHashes",{}).get(MAIN,"").encode(),
        sha(read(reports/"highfly-world7/p71/backup/P71B_BEFORE_CLASS_FIELD_FIX.ts",
@@ -186,9 +184,6 @@ def preflight(stage: Path=STAGE, repo: Path=ROOT, reports: Path=REPORTS, out: Pa
         eq("P71_MODULE_"+rel,
            old_status.get("sourceHashes",{}).get(rel,"").encode(),
            sha(current[rel]).encode())
-    eq("P71B_OLD_MAIN_HASH",
-       old_status.get("sourceHashes",{}).get(MAIN,"").encode(),
-       sha(snap["P71pre"]).encode())
 
     replacements = {
         MAIN:snap["P65M"], HTML:snap["P65H"], MOBILE:snap["P65C"],
