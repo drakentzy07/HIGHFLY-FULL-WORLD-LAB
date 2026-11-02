@@ -34,6 +34,8 @@ def fixture_main():
         '/* HIGHFLY_P41_OFFLINE_SAVE */\n'
         'const foo=readHighflySave(name);\n'
         'const offlineAvailable = isOfflineModeAvailable(import.meta.env.DEV);\n'
+        "const offlineOption = $('#server-opt-offline');\n"
+        'const choose = handleOfflineSelect;\n'
         'function request(){ requestMobileFullscreenLandscape(); }\n'
         "    applyServerMode('online');\n"
     )
@@ -69,8 +71,41 @@ class NativeEditorTests(unittest.TestCase):
     def test_native_offline_routing_only_dev(self):
         result=p.patch_main(fixture_main())
         self.assertIn("applyServerMode(offlineAvailable ? 'offline' : 'online')",result)
-        self.assertIn('isOfflineModeAvailable(import.meta.env.DEV)',result)
+        self.assertIn('const offlineAvailable = import.meta.env.DEV;',result)
+        self.assertIn('handleOfflineSelect',result)
+        self.assertIn('server-opt-offline',result)
         self.assertNotIn('navigator.serviceWorker',result)
+
+    def test_p43_gate_variant_without_original_expression(self):
+        src=fixture_main().replace(
+            'isOfflineModeAvailable(import.meta.env.DEV)',
+            'import.meta.env.DEV && import.meta.env.VITE_HIGHFLY_OFFLINE_LAB === "1"')
+        result=p.patch_main(src)
+        self.assertIn('const offlineAvailable = import.meta.env.DEV;',result)
+        self.assertIn("applyServerMode(offlineAvailable ? 'offline' : 'online')",result)
+
+    def test_p43_false_gate_still_enabled_only_in_dev(self):
+        src=fixture_main().replace('isOfflineModeAvailable(import.meta.env.DEV)','false')
+        result=p.patch_main(src)
+        self.assertIn('const offlineAvailable = import.meta.env.DEV;',result)
+        self.assertNotIn('const offlineAvailable = false;',result)
+
+    def test_p43_multiline_gate(self):
+        src=fixture_main().replace(
+            'const offlineAvailable = isOfflineModeAvailable(import.meta.env.DEV);',
+            'const offlineAvailable = isOfflineModeAvailable(\n  import.meta.env.DEV\n);')
+        result=p.patch_main(src)
+        self.assertIn('const offlineAvailable = import.meta.env.DEV;',result)
+
+    def test_p43_unknown_gate_fails_before_modification(self):
+        src=fixture_main().replace('offlineAvailable =','canUseLocalMode =')
+        with self.assertRaisesRegex(RuntimeError,'P43_NATIVE_OFFLINE_GATE_DECLARATION_UNRECOGNIZED'):
+            p.patch_main(src)
+
+    def test_p43_original_handlers_required(self):
+        src=fixture_main().replace('handleOfflineSelect','unexpected')
+        with self.assertRaisesRegex(RuntimeError,'P43_NATIVE_OFFLINE_ROUTING_MISSING'):
+            p.patch_main(src)
 
     def test_reject_missing_ninth_class(self):
         s=fixture_html().replace('data-class="druid"','data-class="warrior"')
