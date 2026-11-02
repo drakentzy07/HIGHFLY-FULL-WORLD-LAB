@@ -24,7 +24,7 @@ class PreviousFixAuditTests(unittest.TestCase):
  def test_bom_encoded_p30_csv_is_readable(self):
   with tempfile.TemporaryDirectory() as root:
    file=Path(root)/'P30_ALL_MEDIA_AND_USAGE.csv'
-   file.write_text('path,status\\nmodels/props/fence.glb,CC0\\n',encoding='utf-8-sig')
+   file.write_text('path,status\nmodels/props/fence.glb,CC0\n',encoding='utf-8-sig')
    rows=m.rows_for_csv(file,'models/props/fence.glb')
    self.assertEqual(len(rows),1)
    self.assertEqual(rows[0]['path'],'models/props/fence.glb')
