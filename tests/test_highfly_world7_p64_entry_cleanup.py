@@ -120,13 +120,56 @@ class P64EntryTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,"ENTRY_ORIGINAL_SPLASH_MISSING"):
             self.runit()
 
-    def test_unknown_markup_never_rewrites_native_editor(self):
-        broken=self.html.replace(b"highfly_p42_hunter.js",b"unexpected_script.js")
-        (self.stage/"index.html").write_bytes(broken)
+    def test_missing_p45_style_matches_real_p64_anchor_drift(self):
+        # User Codespace: ENTRY_STYLE_ANCHOR_DRIFT_highfly-p45-brand-css.
+        # P45 style disappeared earlier; P42 and P47 controls still survive.
+        variant=self.html.replace(
+            b'<style id="highfly-p45-brand-css">\n'
+            b'#offline-select .mini-class {display:none}\n</style>\n',b'')
+        (self.stage/"index.html").write_bytes(variant)
         self.p64.write_text(json.dumps({
             "mode":"BUILD_GREEN_BROWSER_PENDING",
-            "sourceSha256":{"index.html":sha(broken)}}),"utf8")
-        with self.assertRaisesRegex(RuntimeError,"ENTRY_LINK_ANCHOR_DRIFT"):
+            "sourceSha256":{"index.html":sha(variant)}}),"utf8")
+        status=self.runit(True,build=lambda:{"exitCode":0})
+        self.assertEqual(status["mode"],"BUILD_GREEN_BROWSER_PENDING")
+        final=(self.stage/"index.html").read_text("utf8")
+        self.assertIn("data-class=\"mage\"",final)
+        self.assertNotIn("highfly_p42_hunter.js",final)
+        self.assertNotIn("highfly/p47.css",final)
+        self.assertIn("p64_entry_progress.js",final)
+
+    def test_optional_missing_p45_script_and_p47_links_are_safe(self):
+        variant=self.html.replace(
+            b'<script defer src="/highfly_p45_branding.js"></script>\n',b''
+        ).replace(
+            b'<link rel="stylesheet" href="/highfly/p47.css" />\n',b''
+        ).replace(
+            b'<script defer src="/highfly/p47.js"></script>\n',b'')
+        (self.stage/"index.html").write_bytes(variant)
+        self.p64.write_text(json.dumps({
+            "mode":"BUILD_GREEN_BROWSER_PENDING",
+            "sourceSha256":{"index.html":sha(variant)}}),"utf8")
+        self.assertEqual(self.runit(True,build=lambda:{"exitCode":0})["mode"],
+                         "BUILD_GREEN_BROWSER_PENDING")
+
+    def test_unknown_markup_preserved_not_silently_discarded(self):
+        changed=self.html.replace(b"highfly_p42_hunter.js",b"unexpected_script.js")
+        (self.stage/"index.html").write_bytes(changed)
+        self.p64.write_text(json.dumps({
+            "mode":"BUILD_GREEN_BROWSER_PENDING",
+            "sourceSha256":{"index.html":sha(changed)}}),"utf8")
+        result=self.runit(True,build=lambda:{"exitCode":0})
+        self.assertEqual(result["mode"],"BUILD_GREEN_BROWSER_PENDING")
+        self.assertIn("unexpected_script.js",(self.stage/"index.html").read_text())
+
+    def test_duplicate_historical_css_fails_closed(self):
+        duplicate=b'<style id="highfly-p45-brand-css">x</style>\n'
+        changed=self.html.replace(b"</head>",duplicate+b"</head>",1)
+        (self.stage/"index.html").write_bytes(changed)
+        self.p64.write_text(json.dumps({
+            "mode":"BUILD_GREEN_BROWSER_PENDING",
+            "sourceSha256":{"index.html":sha(changed)}}),"utf8")
+        with self.assertRaisesRegex(RuntimeError,"ENTRY_DUPLICATE_STYLE"):
             self.runit(True,build=lambda:{"exitCode":0})
         self.assertFalse(self.out.exists())
 
