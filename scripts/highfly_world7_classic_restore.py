@@ -3,8 +3,7 @@
 
 Removes DrakenLAB P71/P71B through verified P71 backup; does NOT undo P68/P69
 other than disabling P69 manual ATK in favor of
-native ATK, and making monster screen taps target-only. Reuses original 9-class
-offline selector when explicitly compiled as PRIVATE OFFLINE LAB. Honors P41 save
+native ATK, and making monster screen taps target-only. Leaves the existing 9-class selector and player editor untouched; no new gate. Honors P41 save
 if installed and upgrades the previous single-name save slot to per-name slots.
 Never touches the original pin, models, abilities, quest data, server or classes.
 """
@@ -76,13 +75,10 @@ def once(s: str, before: str, after: str, label: str) -> str:
 def patch_original(main: str, index: str, saves: str | None) -> tuple[str,str,str | None]:
     if "HIGHFLY_WORLD7_P71_DRAKENLAB" in main:
         raise RuntimeError("CLASSIC_BACKUP_CONTAINS_DRAKENLAB")
-    main = once(
-        main,
-        "const offlineAvailable = isOfflineModeAvailable(import.meta.env.DEV);",
-        "// " + MARK + ": only the PRIVATE offline-lab build exposes the original class selector.\n"
-        "  const offlineAvailable = isOfflineModeAvailable(\n"
-        "    import.meta.env.DEV || import.meta.env.VITE_HIGHFLY_OFFLINE_LAB === '1');",
-        "NATIVE_SELECTOR")
+    # REUSE FIRST: The 9-class selector and creation UI already existed in
+    # the private HIGHFLY stage before P71. This rollback MUST NOT alter them.
+    # In particular, do not assume the exact upstream offlineAvailable source:
+    # P41 and subsequent changes may have customized the local-only gate.
     # ClaudeCraft stepPlayerMotion (sim/player_motion.ts) uses right=(-cos f,+sin f).
     # P69 already matches that native convention. Do not invert world X/Z again!
     native_heading = (
@@ -201,7 +197,7 @@ def run(apply=False, *, stage=STAGE, out=OUT, repo=ROOT, build=None) -> dict:
     result = {
         "phase": "HIGHFLY_CLASSIC_RESTORE",
         "mode": "DRY_RUN",
-        "nativeNineClassSelector": True,
+        "nativeNineClassSelector": "PRESERVED_EXISTING_NO_REWRITE",
         "drakenlabRemoved": False,
         "nativeAtkButton": True,
         "touchWorldOnlyTargets": True,
