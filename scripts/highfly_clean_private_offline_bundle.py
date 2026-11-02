@@ -49,7 +49,7 @@ export default defineConfig({
     {
       name:'highfly-private-offline-only',enforce:'pre',
       resolveId(source,importer){
-        const from=String(importer||'').replaceAll('\\\\','/').split('?')[0];
+        const from=String(importer||'').split('?')[0];
         if(source==='./game/offline_mode_gate' && from.endsWith('/src/main.ts'))
           return '\\0highfly-clean-private-offline-gate';
       },
