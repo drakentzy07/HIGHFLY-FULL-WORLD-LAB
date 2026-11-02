@@ -95,8 +95,9 @@ def inspect(*,archive=CKPT,stage=STAGE,lab=LAB,work=WORK):
             "expandedBytes":total,"items":manifest}
 
 def apply(*,archive=CKPT,stage=STAGE,lab=LAB,report=REPORT,
-          work=WORK,build=True,build_runner=None):
+          work=WORK,build=False,build_runner=None):
     check=inspect(archive=archive,stage=stage,lab=lab,work=work)
+    if build_runner is not None:build=True
     if report.exists() or report.is_symlink():
         raise RuntimeError("P43_REPORT_ALREADY_EXISTS_REVIEW_BEFORE_RETRY")
     lab.mkdir(parents=True,exist_ok=False)
@@ -117,7 +118,14 @@ def apply(*,archive=CKPT,stage=STAGE,lab=LAB,report=REPORT,
             elif p.is_dir() and p.name in ("shared","packages","vendor","server"):
                 dest.symlink_to(p,target_is_directory=True)
                 copied.append(p.name+" (shared read-only source)")
-        (lab/"public").symlink_to(stage/"public",target_is_directory=True)
+        # Never symlink the entire public directory: P43 archive has its own
+        # public/highfly_p40_icons.js file and extraction MUST NOT write to
+        # stage/public. Link existing asset entries individually instead.
+        (lab/"public").mkdir(exist_ok=False)
+        for asset in (stage/"public").iterdir():
+            if asset.name=="highfly_p40_icons.js":
+                continue
+            (lab/"public"/asset.name).symlink_to(asset,target_is_directory=asset.is_dir())
         (lab/"node_modules").symlink_to(stage/"node_modules",target_is_directory=True)
         with tarfile.open(archive,"r:gz") as tf:
             for member in tf:
@@ -186,9 +194,11 @@ def apply(*,archive=CKPT,stage=STAGE,lab=LAB,report=REPORT,
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--apply",action="store_true")
+    ap.add_argument("--build",action="store_true",help="Optional Vite bundle; copies public assets to lab/dist")
     args=ap.parse_args()
+    if args.build and not args.apply:ap.error("--build requires --apply")
     if args.apply:
-        result=apply()
+        result=apply(build=args.build)
     else:
         v=inspect()
         result={"phase":"P43_ISOLATED_SNAPSHOT","mode":"DRY_RUN",
