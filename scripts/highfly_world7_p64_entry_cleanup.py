@@ -171,16 +171,24 @@ def read(p:Path,root:Path)->bytes:
     return p.read_bytes()
 
 def remove_style(s:str, id_:str)->str:
+    # P45 style was already removed by an older entry rebuild in real P64.
+    # Remove when present, but never require an historical layer to still exist.
     expression=r'<style\s+id=["\']'+re.escape(id_)+r'["\']\s*>.*?</style>\s*'
-    result,n=re.subn(expression,'',s,count=1,flags=re.I|re.S)
-    if n!=1 or re.search(expression,result,re.I|re.S):
-        raise RuntimeError("ENTRY_STYLE_ANCHOR_DRIFT_"+id_)
-    return result
+    occurrences=len(re.findall(expression,s,flags=re.I|re.S))
+    if occurrences>1:
+        raise RuntimeError("ENTRY_DUPLICATE_STYLE_"+id_)
+    if occurrences==0:
+        if re.search(r'<style[^>]*id=["\']'+re.escape(id_),s,flags=re.I):
+            raise RuntimeError("ENTRY_MALFORMED_STYLE_"+id_)
+        return s
+    return re.sub(expression,'',s,count=1,flags=re.I|re.S)
 
 def remove_exact(s:str,needle:str,label:str)->str:
-    if s.count(needle)!=1:
-        raise RuntimeError("ENTRY_LINK_ANCHOR_DRIFT_"+label+"_COUNT_"+str(s.count(needle)))
-    return s.replace(needle,"",1)
+    # Historical P45/P47 links may be absent in P64's verified HTML.
+    occurrences=s.count(needle)
+    if occurrences>1:
+        raise RuntimeError("ENTRY_DUPLICATE_LINK_"+label)
+    return s.replace(needle,"",1) if occurrences==1 else s
 
 def transform(s:str)->str:
     if MARK in s:raise RuntimeError("ENTRY_ALREADY_APPLIED")
