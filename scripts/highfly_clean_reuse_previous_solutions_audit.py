@@ -75,7 +75,7 @@ def readjson(f):
 def rows_for_csv(f,needle):
  if not f.is_file() or f.is_symlink():return []
  selected=[]
- with f.open('r',encoding='utf8-sig',errors='replace',newline='') as inp:
+ with f.open('r',encoding='utf-8-sig',errors='replace',newline='') as inp:
   reader=csv.DictReader(inp)
   for row in reader:
    if needle.casefold() in json.dumps(row,ensure_ascii=False).casefold():
