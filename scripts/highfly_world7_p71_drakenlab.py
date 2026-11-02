@@ -144,8 +144,16 @@ def run(apply: bool = False, *, stage: Path = STAGE, repo: Path = ROOT,
     }
     if not apply or info["already"]:
         return result
-    if out.exists() or out.is_symlink():
-        raise RuntimeError("P71_BACKUP_PATH_ALREADY_EXISTS")
+    # The sibling P71 visual audit legitimately creates OUT to store its report.
+    # Reject *only* an existing installer backup/status, never a report folder.
+    # Fail closed if someone left a previous install attempt: never overwrite it.
+    if out.is_symlink() or (out.exists() and not out.is_dir()):
+        raise RuntimeError("P71_REPORT_DIRECTORY_UNSAFE")
+    backup_root = out / "backup"
+    status_file = out / "P71_STATUS.json"
+    if (backup_root.exists() or backup_root.is_symlink()
+            or status_file.exists() or status_file.is_symlink()):
+        raise RuntimeError("P71_EXISTING_INSTALL_BACKUP_OR_STATUS")
     backed = None
     touched = []
     try:
