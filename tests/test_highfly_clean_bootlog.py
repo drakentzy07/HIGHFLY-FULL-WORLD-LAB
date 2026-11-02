@@ -21,7 +21,7 @@ class BootLogTest(unittest.TestCase):
    (css/"index.css").write_text("body{background:black}")
    (css/"index.extra.css").write_text("body{margin:0}")
    html=lab/"index.html"
-   original='<html>\n<head>\n<title>Original</title>\n</head>\n<body><div id="offline-select"><button data-class="warrior"></button></div></body></html>'
+   original='<html>\n<head>\n<title>Original</title>\n<link rel="stylesheet" href="/src/styles/index.extra.css" />\n</head>\n<body><div id="offline-select"><button data-class="warrior"></button></div></body></html>'
    html.write_text(original)
    with patch.object(boot,"WORK",base),patch.object(boot,"LAB",lab),\
         patch.object(boot,"INDEX",html),patch.object(boot,"BACKUP",lab/".backup"):
