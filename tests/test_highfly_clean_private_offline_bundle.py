@@ -3,6 +3,8 @@ from pathlib import Path
 import importlib.util
 import tempfile
 import unittest
+import subprocess
+import shutil
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -21,6 +23,15 @@ class BundleTest(unittest.TestCase):
   self.assertIn("index.html",bundle.CONFIG_BODY)
   self.assertIn("preview:{host:'0.0.0.0',port:4181",bundle.CONFIG_BODY)
   self.assertNotIn("pages",bundle.CONFIG_BODY.lower())
+ def test_generated_vite_config_is_valid_javascript(self):
+  if not shutil.which("node"):self.skipTest("node unavailable")
+  with tempfile.TemporaryDirectory() as td:
+   path=Path(td)/"private-config.mjs"
+   path.write_text(bundle.CONFIG_BODY,encoding="utf8")
+   result=subprocess.run(["node","--check",str(path)],capture_output=True,text=True)
+   self.assertEqual(result.returncode,0,result.stderr)
+  self.assertIn("highfly-clean-private-offline-gate",bundle.CONFIG_BODY)
+
  def test_preflight_rejects_unknown_stage(self):
   with tempfile.TemporaryDirectory() as td:
    stage=Path(td)/".workspace"/"fake-stage"
