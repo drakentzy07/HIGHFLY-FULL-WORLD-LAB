@@ -9,9 +9,9 @@ Development-only offline gate remains functional inside PRIVATE preview build.
 No HTTPS publishing, no Git repo media, no license assumptions.
 
 --check read-only.
---apply temporarily patches ONLY clean-stage offline_mode_gate.ts using private
- Vite MODE, generates minimal local build config, runs vite build. If build fails,
- revert the patched gate and config. On success both remain for the preview.
+--apply generates a private build config with a virtual OFFLINE gate ONLY for the
+ native src/main.ts import during private preview build, without editing any
+ game source files. On build failure, generated config/output are rolled back.
 """
 from __future__ import annotations
 import argparse
@@ -34,8 +34,6 @@ GATE=STAGE/"src/game/offline_mode_gate.ts"
 REPORTDIR=WORK/"reports/highfly-clean-0447"
 LOG=REPORTDIR/"PRIVATE_BUNDLE_BUILD_LOG.txt"
 REPORT=REPORTDIR/"PRIVATE_BUNDLE_BUILD_RESULT.json"
-DEV="return isDev;"
-LOCAL="return isDev || import.meta.env.MODE === 'highfly-clean-private-offline';"
 PIN="493c35a108cef6c8aa290e8793107b1cd117886e"
 CONFIG_BODY="""// PRIVATE clean Codespaces preview only — NEVER deploy/bundle licensed SOURCE V7.
 import path from 'node:path';
@@ -47,7 +45,21 @@ export default defineConfig({
   root,
   base: '/',
   publicDir: path.join(root,'public'),
-  plugins: [svelte()],
+  plugins: [
+    {
+      name:'highfly-private-offline-only',enforce:'pre',
+      resolveId(source,importer){
+        const from=String(importer||'').replaceAll('\\\\','/').split('?')[0];
+        if(source==='./game/offline_mode_gate' && from.endsWith('/src/main.ts'))
+          return '\\0highfly-clean-private-offline-gate';
+      },
+      load(id){
+        if(id==='\\0highfly-clean-private-offline-gate')
+          return 'export function isOfflineModeAvailable(isDev){return true;}';
+      }
+    },
+    svelte()
+  ],
   resolve: { alias: {'#bot-detector': path.join(root,'server/bot_detector/stub.ts')} },
   define: {
     __APP_VERSION__: JSON.stringify('HIGHFLY_CLEAN_0447_PRIVATE'),
@@ -96,9 +108,9 @@ def check():
  if not (STAGE/"node_modules/vite/bin/vite.js").is_file():
   raise RuntimeError("PRIVATE_BUNDLE_VITE_DEPENDENCY_MISSING")
  gate=GATE.read_text("utf8")
- if gate.count(DEV)!=1 and gate.count(LOCAL)!=1:
-  raise RuntimeError("PRIVATE_BUNDLE_GATE_UNEXPECTED_SOURCE")
- if DEV not in gate and LOCAL not in gate:raise RuntimeError("PRIVATE_BUNDLE_GATE_UNRECOGNIZED")
+ # The PRIVATE preview uses an isolated Vite virtual module for the import from
+ # main.ts; it does not rewrite or depend on the shape of this existing file.
+ # Preserve prior HIGHFLY changes unchanged even if the gate was customized.
  if CONFIG.exists() or CONFIG.is_symlink():raise RuntimeError("PRIVATE_BUNDLE_CONFIG_ALREADY_PRESENT")
  if OUT.exists() or OUT.is_symlink():raise RuntimeError("PRIVATE_BUNDLE_OUTPUT_ALREADY_PRESENT")
  if REPORT.exists() or LOG.exists():raise RuntimeError("PRIVATE_BUNDLE_RESULT_ALREADY_PRESENT")
@@ -111,18 +123,18 @@ def check():
   "basePlayerRestored":True,
   "cssIndependent":True,
   "stageGateBefore":digest(GATE),
+  "stageGateBytes":len(gate),
+  "privateOfflineMethod":"VITE_VIRTUAL_MODULE_FOR_NATIVE_MAIN_ONLY",
   "outputDir":str(OUT),
   "startCommand":"node node_modules/vite/bin/vite.js preview --config .highfly-private-offline-vite.config.mjs --mode highfly-clean-private-offline --host 0.0.0.0 --port 4181 --strictPort"
  }
 def apply():
  note=check()
- old=GATE.read_text("utf8")
- if DEV not in old:
-  raise RuntimeError("PRIVATE_BUNDLE_ALREADY_MODIFIED_GATE")
- changed=old.replace(DEV,LOCAL,1)
+ old_gate_hash=digest(GATE)
  REPORTDIR.mkdir(parents=True,exist_ok=True)
  try:
-  GATE.write_text(changed,"utf8")
+  if GATE.is_symlink() or digest(GATE)!=old_gate_hash:
+   raise RuntimeError("PRIVATE_BUNDLE_GATE_CHANGED_DURING_PREFLIGHT")
   CONFIG.write_text(CONFIG_BODY,"utf8")
   env=os.environ.copy()
   env["NODE_OPTIONS"]="--max-old-space-size=3072"
@@ -145,6 +157,7 @@ def apply():
    "createdUtc":datetime.now(timezone.utc).isoformat(),
    "status":"STATIC_PRIVATE_BUNDLE_BUILT_BROWSER_ENTRY_NOT_YET_VERIFIED",
    "nativeGatePrivateMode":True,
+   "nativeSourceEdited":False,
    "compiledJavaScriptChunks":len(scripts),
    "originalCodeModified":False,"otherLabsModified":False,
    "privateStageGateSha256After":digest(GATE),
@@ -158,15 +171,13 @@ def apply():
    "nextCommand":note["startCommand"]
   },indent=2,ensure_ascii=False))
  except BaseException:
-  # If build succeeds but postchecks fail, preserve user-owned source/public,
-  # but never strand the dev Offline gate in a patched half state.
-  if GATE.is_file() and not GATE.is_symlink():
-   GATE.write_text(old,"utf8")
+  # On errors delete only generated private output and config. No original
+  # game source was edited, so there is nothing to restore in src/.
   if CONFIG.is_file() and not CONFIG.is_symlink():
    CONFIG.unlink()
   if OUT.is_dir() and not OUT.is_symlink():
    shutil.rmtree(OUT)
-  print("[PRIVATE BUNDLE] FAILED; local gate and config restored; build failure log:",
+  print("[PRIVATE BUNDLE] FAILED; private config/output removed; game source unchanged; build failure log:",
     LOG if LOG.exists() else "unavailable",file=sys.stderr)
   raise
 if __name__=="__main__":
