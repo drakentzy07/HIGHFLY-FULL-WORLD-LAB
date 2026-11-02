@@ -72,7 +72,7 @@ try {
     try {
       await page.waitForFunction(() =>
         document.getElementById('server-select')?.dataset.mode==='offline',
-        {timeout:12000});
+        undefined,{timeout:12000});
     } catch { await page.waitForTimeout(1000); }
     const inspect=()=>page.evaluate(()=>{
       const ids=['start-screen','btn-play','server-select','server-select-trigger',
