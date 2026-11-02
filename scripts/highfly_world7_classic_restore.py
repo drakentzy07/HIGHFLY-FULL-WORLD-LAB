@@ -173,8 +173,15 @@ def plan(stage: Path=STAGE, out: Path=OUT, repo: Path=ROOT) -> dict:
     css_path = stage / NEW_CSS
     if css_path.exists() or css_path.is_symlink():
         raise RuntimeError("CLASSIC_CSS_EXISTS_UNRELATED")
-    if (out / RESTORE_BACKUP).exists() or (out / RESTORE_BACKUP).is_symlink():
-        raise RuntimeError("CLASSIC_PREVIOUS_RESTORE_BACKUP_EXISTS")
+    # Retry a failed build only if every immutable backup equals the rolled-back stage.
+    existing_backup = out / RESTORE_BACKUP
+    if existing_backup.is_symlink() or (existing_backup.exists() and not existing_backup.is_dir()):
+        raise RuntimeError("CLASSIC_RESTORE_BACKUP_UNSAFE")
+    if existing_backup.exists():
+        for rel, raw in {MAIN:current_main, INDEX:idx, SAVE:save, **module_bytes}.items():
+            earlier = read_file(existing_backup / rel, existing_backup)
+            if earlier != raw:
+                raise RuntimeError("CLASSIC_RETRY_BACKUP_MISMATCH " + rel)
     new_main,new_index,new_save = patch_original(
         prior.decode("utf8"), idx.decode("utf8"), save.decode("utf8"))
     if "HIGHFLY_P69_FURY_CORE" not in new_main or "HIGHFLY_P41_OFFLINE_SAVE" not in new_main:
@@ -207,18 +214,22 @@ def run(apply=False, *, stage=STAGE, out=OUT, repo=ROOT, build=None) -> dict:
     if not apply:
         return result
     bdir = out / RESTORE_BACKUP
-    # Unique backup directory: never overwrite previous work or P71 records.
-    if bdir.exists() or bdir.is_symlink():
-        raise RuntimeError("CLASSIC_RESTORE_BACKUP_ALREADY_EXISTS")
-    bdir.mkdir(parents=True, exist_ok=False)
+    if bdir.is_symlink():
+        raise RuntimeError("CLASSIC_RESTORE_BACKUP_UNSAFE")
+    if not bdir.exists():
+        bdir.mkdir(parents=True, exist_ok=False)
     sources = checked["sources"]
     written = []
     try:
         for rel, data in sources.items():
             backup = bdir / rel
             backup.parent.mkdir(parents=True, exist_ok=True)
-            with backup.open("xb") as file:
-                file.write(data)
+            if backup.exists():
+                if read_file(backup, bdir) != data:
+                    raise RuntimeError("CLASSIC_BACKUP_OVERWRITE_DENIED " + rel)
+            else:
+                with backup.open("xb") as file:
+                    file.write(data)
             if digest_bytes(backup.read_bytes()) != digest_bytes(data):
                 raise RuntimeError("CLASSIC_BACKUP_FAILED " + rel)
         for rel, data in checked["updates"].items():
