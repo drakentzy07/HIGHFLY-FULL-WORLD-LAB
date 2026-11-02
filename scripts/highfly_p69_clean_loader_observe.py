@@ -208,7 +208,8 @@ JS_TEXT=r"""/* HIGHFLY_P69_NATIVE_LOADER_CLEAN — READ ONLY: never set loader %
    }
    if(copy)copy.onclick=()=>{
      const content=report(Date.now());
-     navigator.clipboard?.writeText(content).then(()=>{
+     if(!navigator.clipboard?.writeText){copy.textContent='SELECCIONÁ TEXTO';return;}
+     navigator.clipboard.writeText(content).then(()=>{
        copy.textContent='COPIADO';
      }).catch(()=>{copy.textContent='SELECCIONÁ TEXTO';});
    };
