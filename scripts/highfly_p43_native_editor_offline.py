@@ -117,17 +117,43 @@ def patch_main(src:str)->str:
         raise RuntimeError("P43_ALREADY_APPLIED_TO_MAIN")
     if "HIGHFLY_P41_OFFLINE_SAVE" not in src or "readHighflySave" not in src:
         raise RuntimeError("P43_P41_OFFLINE_PERSISTENCE_NOT_FOUND")
-    if "isOfflineModeAvailable(import.meta.env.DEV)" not in src:
-        raise RuntimeError("P43_NATIVE_OFFLINE_GATE_MISSING")
+    # The P43 source has gone through earlier HIGHFLY patches, so its
+    # offlineAvailable initializer may not be the exact original expression.
+    # Anchor to the real declaration and native handlers, not one string.
+    gate_re=re.compile(
+        r"(?m)^([ \t]*)const[ \t]+offlineAvailable(?:[ \t]*:[ \t]*boolean)?"
+        r"[ \t]*=[ \t]*([\s\S]{0,350}?);[ \t]*(?=\r?$)")
+    matches=list(gate_re.finditer(src))
+    if len(matches)!=1:
+        nearby=[row.strip()[:180] for row in src.splitlines()
+                if "offlineAvailable" in row or "server-opt-offline" in row][:12]
+        raise RuntimeError("P43_NATIVE_OFFLINE_GATE_DECLARATION_UNRECOGNIZED "+
+                           str(len(matches))+" "+repr(nearby))
+    if "handleOfflineSelect" not in src or "server-opt-offline" not in src:
+        raise RuntimeError("P43_NATIVE_OFFLINE_ROUTING_MISSING")
     if "requestMobileFullscreenLandscape();" not in src:
         raise RuntimeError("P43_NATIVE_MOBILE_FULLSCREEN_MISSING")
     anchor="    applyServerMode('online');"
     if src.count(anchor)!=1:
-        raise RuntimeError("P43_NATIVE_REALM_DEFAULT_ANCHOR_DRIFT "+str(src.count(anchor)))
-    # No bypass of isOfflineModeAvailable. Dev server route only; the existing
-    # game still owns the dropdown, play button and offline character creation.
+        nearby=[row.strip()[:180] for row in src.splitlines()
+                if "applyServerMode" in row][:12]
+        raise RuntimeError("P43_NATIVE_REALM_DEFAULT_ANCHOR_DRIFT "+
+                           str(src.count(anchor))+" "+repr(nearby))
+    # Explicitly enable the EXISTING offline flow in this private Vite
+    # development laboratory only. Production bundles keep the gate false.
+    # Keep every original event handler, class control, gameplay system and
+    # offline character save wiring untouched.
+    gate=matches[0]
+    original_expr=gate.group(2).strip()
+    if not original_expr:
+        raise RuntimeError("P43_NATIVE_OFFLINE_GATE_EMPTY")
+    replacement=(gate.group(1)+"const offlineAvailable = import.meta.env.DEV;"
+        " // "+MARK+": original offline mode available only in Vite dev")
+    src=src[:gate.start()]+replacement+src[gate.end():]
+    # The marker is intentionally on the gate declaration; the script must
+    # never run twice against an already-modified stage.
     return src.replace(anchor,
-        "    // "+MARK+": choose existing dev-only offline destination first.\n"
+        "    // P43 LAB: default to the built-in Offline path for easy local testing.\n"
         "    applyServerMode(offlineAvailable ? 'offline' : 'online');",1)
 
 def plan(lab:Path=LAB):
