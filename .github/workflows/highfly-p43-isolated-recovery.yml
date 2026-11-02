@@ -10,6 +10,8 @@ on:
       - tests/test_highfly_p43_native_editor_offline.py
       - scripts/highfly_p43_live_entry_diagnostic.mjs
       - scripts/highfly_p43_import_graph_audit.mjs
+      - scripts/highfly_p43_module_link_probe.py
+      - tests/test_highfly_p43_module_link_probe.py
       - scripts/highfly_p43_android_runtime_diag.py
       - tests/test_highfly_p43_android_runtime_diag.py
       - scripts/highfly_p43_browser_module_probe.py
@@ -35,3 +37,4 @@ jobs:
           node --check scripts/highfly_p43_import_graph_audit.mjs
           python -m unittest discover -s tests -p 'test_highfly_p43_android_runtime_diag.py' -v
           python -m unittest discover -s tests -p 'test_highfly_p43_browser_module_probe.py' -v
+          python -m unittest discover -s tests -p 'test_highfly_p43_module_link_probe.py' -v
