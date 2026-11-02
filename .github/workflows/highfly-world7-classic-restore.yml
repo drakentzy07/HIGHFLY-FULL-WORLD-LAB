@@ -1,0 +1,21 @@
+name: HIGHFLY Classic Selector Restore (private stage guard)
+on:
+  push:
+    branches:
+      - highfly-world7-classic-restore-20261102
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  classic-restore-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Native class restore safety
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_classic_restore.py' -v
+      - name: Previous nine-class inventory contracts
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_p71_visual_matrix.py' -v
