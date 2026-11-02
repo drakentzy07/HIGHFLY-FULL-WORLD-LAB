@@ -101,7 +101,7 @@ class RestoreTests(unittest.TestCase):
         self.assertEqual(status["mode"],"BUILD_GREEN_BROWSER_PENDING")
         main=(self.stage/p.MAIN).read_text("utf8")
         self.assertNotIn("WORLD7_P71_DRAKENLAB",main)
-        self.assertIn("VITE_HIGHFLY_OFFLINE_LAB === '1'",main)
+        self.assertIn("const offlineAvailable = isOfflineModeAvailable(import.meta.env.DEV);",main)
         self.assertIn("world.targetEntity(enemy.id)",main)
         self.assertIn("hud.onHighflyBasicTap = null;",main)
         self.assertIn("worldX=vertical*Math.sin(yaw)-horizontal*Math.cos(yaw)",main)
@@ -153,6 +153,21 @@ class RestoreTests(unittest.TestCase):
         result=self.go(True,build=lambda:{"exitCode":0})
         self.assertEqual(result["mode"],"BUILD_GREEN_BROWSER_PENDING")
         self.assertEqual((self.out/p.RESTORE_BACKUP/p.MAIN).read_bytes(),self.current)
+
+    def test_preserves_existing_custom_class_selector_without_anchor(self):
+        # Production stage may already have modified the original selector.
+        # Regression for user's CLASSIC_ANCHOR_DRIFT_NATIVE_SELECTOR_COUNT_0.
+        customized = self.native.decode("utf8").replace(
+            "  const offlineAvailable = isOfflineModeAvailable(import.meta.env.DEV);",
+            "  const offlineAvailable = isOfflineModeAvailable(import.meta.env.DEV || customOfflineGate);")
+        original = self.out/p.BASE
+        original.write_text(customized, "utf8")
+        updated = self.go(True,build=lambda:{"exitCode":0})
+        self.assertEqual(updated["mode"],"BUILD_GREEN_BROWSER_PENDING")
+        new_main=(self.stage/p.MAIN).read_text("utf8")
+        self.assertIn("isOfflineModeAvailable(import.meta.env.DEV || customOfflineGate)",new_main)
+        self.assertNotIn("VITE_HIGHFLY_OFFLINE_LAB",new_main)
+        self.assertNotIn("HIGHFLY_WORLD7_P71_DRAKENLAB",new_main)
 
     def test_preserves_native_camera_right_basis(self):
         # The original stepPlayerMotion uses camera-right = (-cos, +sin).
