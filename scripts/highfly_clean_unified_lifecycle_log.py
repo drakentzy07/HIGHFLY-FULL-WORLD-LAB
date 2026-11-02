@@ -221,7 +221,7 @@ def plan():
  if BACKUP.exists() or BACKUP.is_symlink():raise RuntimeError('UNIFIED_LOG_BACKUP_COLLISION')
  if original.count('<head>')!=1 or original.count('</head>')!=1:
   raise RuntimeError('UNIFIED_LOG_HTML_HEAD_UNEXPECTED')
- if 'offline-select' not in original or 'main-' not in original:
+ if 'offline-select' not in original or 'assets/' not in original:
   raise RuntimeError('UNIFIED_LOG_NOT_THE_EXPECTED_PRIVATE_GAME')
  updated=original
  found=[]
