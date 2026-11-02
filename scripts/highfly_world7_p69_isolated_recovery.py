@@ -86,10 +86,17 @@ def preflight():
   raise RuntimeError('P69_HISTORY_NOT_BUILD_GREEN')
  p64_hashes=p64.get('sourceSha256',{})
  for rel,digest in p64_hashes.items():
+  if rel=='index.html':
+   # P64 entry cleanup legitimately modified index.html after the rollback.
+   # Compare the current entry to its later independently recorded status.
+   entry_status=WORK/'reports/highfly-world7/p64-entry-clean/P64_ENTRY_STATUS.json'
+   entry=json.loads(read(entry_status,WORK,'p64_entry_status'))
+   digest=entry.get('htmlSha256')
+   if not digest or entry.get('mode')!='BUILD_GREEN_BROWSER_PENDING':
+    raise RuntimeError('P69_ENTRY_STATUS_MISSING_OR_NOT_GREEN')
   f=STAGE/rel
   actual=hash_(read(f,STAGE,'p64_source_'+rel))
   if actual!=digest:
-   # Entry V2 modifies only CSS/JS, not source; refuse any unknown code drift.
    raise RuntimeError('P69_P64_STAGE_CHANGED_'+rel)
  restored={}
  for rel in OVERLAY+CREATED:
