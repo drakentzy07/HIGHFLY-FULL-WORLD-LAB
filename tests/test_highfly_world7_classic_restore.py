@@ -140,11 +140,19 @@ class RestoreTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,"MODULE_HASH_CHANGED"):
             self.go(True,build=lambda:{"exitCode":0})
 
-    def test_refuse_reusing_backup(self):
+    def test_refuse_incomplete_prior_backup(self):
         backup=self.out/p.RESTORE_BACKUP
         backup.mkdir()
-        with self.assertRaisesRegex(RuntimeError,"PREVIOUS_RESTORE_BACKUP"):
+        with self.assertRaisesRegex(RuntimeError,"REQUIRED_FILE_MISSING"):
             self.go(False)
+
+    def test_retry_after_rolled_back_build_without_deleting_backup(self):
+        with self.assertRaisesRegex(RuntimeError,"BUILD_FAILED"):
+            self.go(True,build=lambda:{"exitCode":1})
+        # Prior backup remains valuable. Retry only when all bytes still match.
+        result=self.go(True,build=lambda:{"exitCode":0})
+        self.assertEqual(result["mode"],"BUILD_GREEN_BROWSER_PENDING")
+        self.assertEqual((self.out/p.RESTORE_BACKUP/p.MAIN).read_bytes(),self.current)
 
     def test_preserves_native_camera_right_basis(self):
         # The original stepPlayerMotion uses camera-right = (-cos, +sin).
