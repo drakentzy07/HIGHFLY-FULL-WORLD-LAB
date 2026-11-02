@@ -86,7 +86,7 @@ def safe_rel(r):
  p=PurePosixPath(r)
  return not p.is_absolute() and '..' not in p.parts and re.fullmatch(r'[A-Za-z0-9_./-]+',r) and p.suffix.casefold() in {'.glb','.gltf','.webp','.png','.jpg','.jpeg'}
 def preflight():
- for root in (ORIG,OLD,CLEAN,DIST):
+ for root in (ORIG,CLEAN,DIST):
   if root.is_symlink() or not root.is_dir() or not root.resolve().is_relative_to(WORK.resolve()):
    raise RuntimeError('REUSE_AUDIT_PRIVATE_STAGE_OR_REFERENCE_MISSING '+str(root))
  sha=subprocess.check_output(['git','-C',str(ORIG),'rev-parse','HEAD'],text=True).strip()
@@ -129,6 +129,8 @@ def audit(paths=PATHS):
    state='P8_OWNED_PRIVATE_BUILDING_REUSE_WITH_HASH_COMMERCIAL_REVIEW'
   elif stage['exists']:
    state='OLDER_STAGE_HAS_FILE_BUT_SOURCE_RECEIPT_NOT_CONFIRMED'
+  elif receipt:
+   state='P8_RECEIPT_FOUND_BUT_OLDER_PRIVATE_BUILDING_FILE_ABSENT'
   elif original['exists'] and eligible:
    state='ORIGINAL_EXACT_SPEC_CC0_CANDIDATE'
   elif rel=='models/chars/modular/warrior_modular.glb':
@@ -155,6 +157,7 @@ def audit(paths=PATHS):
    'gameSourceEdited':False,'olderStageEdited':False,
    'reportsFound':{k:str(v) if v.is_file() else None for k,v in REPORT_PATHS.items()},
    'verifiedPriorFixes':existing_sources,
+   'olderStageAccessible':OLD.is_dir() and not OLD.is_symlink(),
    'importantLessons':[
     'P8 source Medieval Hexagon model files are glTF and renamed to seven hexb_* targets for eleven Eastbrook buildings; exact P8 glbSha256 is required to reuse.',
     'P33 did not fix warrior_modular: P34 disabled missing modular provider, P36/P37 used six proven CC0 fixed-rig KayKit NPC bodies.',
