@@ -29,6 +29,7 @@ class P43RecoveryTests(unittest.TestCase):
         (self.stage/"index.html").write_text("CURRENT BAD P64 HTML","utf8")
         (self.stage/"public").mkdir()
         (self.stage/"public/owned_asset.png").write_bytes(b"PRIVATE IMAGE")
+        (self.stage/"public/highfly_p40_icons.js").write_bytes(b"CURRENT P40 STAGE FILE")
         (self.stage/"node_modules/vite/bin").mkdir(parents=True)
         (self.stage/"node_modules/vite/bin/vite.js").write_text("VITE","utf8")
         (self.stage/"package.json").write_text('{"name":"highfly","private":true}',"utf8")
@@ -74,12 +75,22 @@ class P43RecoveryTests(unittest.TestCase):
         self.assertEqual((self.lab/"index.html").read_bytes(),self.manifest["index.html"])
         self.assertEqual((self.stage/"index.html").read_text(),"CURRENT BAD P64 HTML")
         self.assertEqual((self.stage/"src/main.ts").read_text(),"CURRENT BAD P64 MAIN")
-        self.assertTrue((self.lab/"public").is_symlink())
+        self.assertFalse((self.lab/"public").is_symlink())
+        self.assertTrue((self.lab/"public/owned_asset.png").is_symlink())
+        self.assertEqual((self.lab/"public/highfly_p40_icons.js").read_bytes(),self.manifest["public/highfly_p40_icons.js"])
+        self.assertEqual((self.stage/"public/highfly_p40_icons.js").read_bytes(),b"CURRENT P40 STAGE FILE")
         self.assertTrue((self.lab/"node_modules").is_symlink())
         self.assertEqual((self.lab/"public/owned_asset.png").read_bytes(),b"PRIVATE IMAGE")
         self.assertEqual((self.lab/"package.json").read_text(),
                          '{"name":"highfly","private":true}')
         self.assertTrue(self.report.is_file())
+
+    def test_default_applies_snapshot_without_heavy_dist_build(self):
+        result=p.apply(archive=self.archive,stage=self.stage,lab=self.lab,
+                       report=self.report,work=self.work)
+        self.assertEqual(result["result"],"SNAPSHOT_EXTRACTED_BROWSER_PENDING")
+        self.assertNotIn("buildExitCode",result)
+        self.assertFalse((self.lab/"dist").exists())
 
     def test_missing_checkpoint_rejected(self):
         self.archive.unlink()
