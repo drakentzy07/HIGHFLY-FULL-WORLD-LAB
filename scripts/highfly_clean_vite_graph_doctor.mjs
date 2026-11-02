@@ -108,6 +108,17 @@ async function scan(){
 }
 if(!existsSync(path.join(LAB,'src','main.ts')))throw Error('CLEAN_LAB_MAIN_MISSING');
 await scan();
+const parents=new Map();
+for(const e of edges){if(!parents.has(e.child))parents.set(e.child,e.parent);}
+const trace=target=>{
+ const chain=[target], visited=new Set(chain);
+ while(parents.has(chain[0]) && chain.length<20){
+  const p=parents.get(chain[0]);if(visited.has(p))break;
+  chain.unshift(p);visited.add(p);
+ }
+ return chain;
+};
+for(const f of failures)f.importChain=trace(f.path);
 const report={task:'HIGHFLY CLEAN / original v0.44.7 / static module imports',
   atUtc:new Date().toISOString(),source:'Vite HTTP transformed modules via localhost',
   parser:lexerName,port:PORT,limit:LIMIT,checked:seen.size,
