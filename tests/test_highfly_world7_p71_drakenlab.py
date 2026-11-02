@@ -82,6 +82,29 @@ class DrakenLabInstallTests(unittest.TestCase):
         self.assertNotEqual(self.main.read_text("utf8"), self.original)
         self.assertTrue(p.plan(self.stage, self.root)["already"])
 
+    def test_preexisting_visual_matrix_report_is_preserved(self):
+        # Exact real-world regression: visual audit writes this directory first.
+        self.out.mkdir(parents=True)
+        visual = self.out / "P71_VISUAL_MATRIX.md"
+        visual.write_text("nine class models found", "utf8")
+        with self.patches(), patch.object(p.p9, "smoke", return_value={"exitCode": 0}):
+            result = p.run(True, stage=self.stage, repo=self.root, out=self.out)
+        self.assertEqual(result["mode"], "BUILD_GREEN_BROWSER_PENDING")
+        self.assertEqual(visual.read_text("utf8"), "nine class models found")
+        self.assertTrue((self.out / "backup/src/main.ts").exists())
+        self.assertTrue((self.out / "P71_STATUS.json").exists())
+
+    def test_existing_backup_blocks_without_overwrite(self):
+        backup = self.out / "backup/src/main.ts"
+        backup.parent.mkdir(parents=True)
+        backup.write_text("precious previous backup", "utf8")
+        with self.patches(), patch.object(p.p9, "smoke") as build:
+            with self.assertRaisesRegex(RuntimeError, "EXISTING_INSTALL_BACKUP"):
+                p.run(True, stage=self.stage, repo=self.root, out=self.out)
+        self.assertEqual(backup.read_text("utf8"), "precious previous backup")
+        self.assertEqual(self.main.read_text("utf8"), self.original)
+        build.assert_not_called()
+
     def test_build_red_reverts_all_stage_files(self):
         with self.patches(), patch.object(p.p9, "smoke", return_value={"exitCode": 1}):
             with self.assertRaisesRegex(RuntimeError, "VITE_BUILD_FAILED"):
