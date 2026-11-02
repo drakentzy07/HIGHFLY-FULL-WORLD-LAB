@@ -50,7 +50,8 @@ class DrakenLabInstallTests(unittest.TestCase):
     def test_dry_plan_preserves_files_and_rpg(self):
         data = p.plan(self.stage, self.root)
         self.assertEqual(data["newMain"].count(p.MARK), 2)
-        self.assertIn("offlineSim.player.cls", data["newMain"])
+        self.assertIn("offlineSim.player.templateId as PlayerClass", data["newMain"])
+        self.assertNotIn("offlineSim.player.cls", data["newMain"])
         self.assertIn("void startOffline(highflyDrakenLabBoot.cls", data["newMain"])
         self.assertIn("VITE_HIGHFLY_OFFLINE_LAB", data["newMain"])
         self.assertEqual(self.main.read_text("utf8"), self.original)
