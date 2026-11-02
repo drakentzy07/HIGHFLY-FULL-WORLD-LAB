@@ -24,7 +24,10 @@ INDEX=LAB/'index.html'
 BACKUP=LAB/'.hf-clean-bootlog-original-index.html'
 REPORT=WORK/'reports/highfly-clean-0447/BOOT_HTTP_PROBE.json'
 TAG='HIGHFLY_CLEAN_BOOTLOG_V1'
-INSERT_CSS='<link rel="stylesheet" href="/src/styles/index.css" data-hf-clean-css-fallback="1" />\n'
+INSERT_CSS='<link rel="stylesheet" href="/src/styles/index.css?direct" data-hf-clean-css-fallback="1" />\n'
+PREVIOUS_CSS='<link rel="stylesheet" href="/src/styles/index.css" data-hf-clean-css-fallback="1" />\n'
+EXTRA_CSS='href="/src/styles/index.extra.css"'
+EXTRA_DIRECT='href="/src/styles/index.extra.css?direct"'
 SCRIPT= r"""<script id="hf-clean-bootlog-bootstrap">
 /* HIGHFLY_CLEAN_BOOTLOG_V1: FIRST head script, before any Vite/main.ts code.
    Records only metadata (no requests bodies, names, saved data or tokens). */
@@ -191,11 +194,27 @@ def install():
  replacement=old.replace('<head>',f'<head>\n{INJECT}',1)
  if INSERT_CSS not in replacement:
   replacement=replacement.replace('</head>',INSERT_CSS+'</head>',1)
+ if replacement.count(EXTRA_CSS)!=1:
+  raise RuntimeError('BOOTLOG_EXTRA_CSS_LINK_CHANGED')
+ replacement=replacement.replace(EXTRA_CSS,EXTRA_DIRECT,1)
  if INDEX.read_text('utf8')!=old:raise RuntimeError('BOOTLOG_CONCURRENT_EDIT')
  INDEX.write_text(replacement,'utf8')
  print('[BOOTLOG INSTALLED] First script precedes any game module; independent CSS fallback installed.')
  print('[BOOTLOG] Original exact backup:',BACKUP)
  print('[BOOTLOG] Reload port 4180 and click DESCARGAR LOG at bottom-right.')
+
+def repair_css():
+ current=require_clean()
+ if TAG not in current or not BACKUP.is_file() or BACKUP.is_symlink():
+  raise RuntimeError('BOOTLOG_NOT_INSTALLED_OR_BACKUP_MISSING')
+ if current.count(PREVIOUS_CSS)!=1 or current.count(EXTRA_CSS)!=1:
+  if INSERT_CSS in current and EXTRA_DIRECT in current:
+   print('[BOOTLOG CSS] ALREADY_REPAIRED');return
+  raise RuntimeError('BOOTLOG_CSS_UNEXPECTED_ANCHOR_STOP')
+ fixed=current.replace(PREVIOUS_CSS,INSERT_CSS,1).replace(EXTRA_CSS,EXTRA_DIRECT,1)
+ if INDEX.read_text('utf8')!=current:raise RuntimeError('BOOTLOG_INDEX_CHANGED_BEFORE_CSS_FIX')
+ INDEX.write_text(fixed,'utf8')
+ print('[BOOTLOG CSS REPAIRED] Vite serves both stylesheet links with ?direct (text/css).')
 
 def remove():
  current=require_clean()
@@ -204,7 +223,10 @@ def remove():
  orig=BACKUP.read_bytes()
  expected=orig.decode('utf8').replace('<head>',f'<head>\n{INJECT}',1)
  expected=expected.replace('</head>',INSERT_CSS+'</head>',1) if INSERT_CSS not in expected else expected
- if expected!=current:raise RuntimeError('BOOTLOG_INDEX_DRIFT_NO_DESTRUCTIVE_RESTORE')
+ expected=expected.replace(EXTRA_CSS,EXTRA_DIRECT,1)
+ legacy=orig.decode('utf8').replace('<head>',f'<head>\n{INJECT}',1)
+ legacy=legacy.replace('</head>',PREVIOUS_CSS+'</head>',1)
+ if expected!=current and legacy!=current:raise RuntimeError('BOOTLOG_INDEX_DRIFT_NO_DESTRUCTIVE_RESTORE')
  INDEX.write_bytes(orig);BACKUP.unlink()
  print('[BOOTLOG REMOVED] Exact original HTML restored.')
 
@@ -239,8 +261,8 @@ def check_url(url):
 
 def probe(port):
  lab=require_clean()
- paths=['/','/@vite/client','/src/main.ts','/src/styles/index.css',
-        '/src/styles/index.extra.css','/models/chars/players/knight.glb',
+ paths=['/','/@vite/client','/src/main.ts','/src/styles/index.css?direct',
+        '/src/styles/index.extra.css?direct','/models/chars/players/knight.glb',
         '/models/creatures/wolf.glb']
  results=[check_url(f'http://127.0.0.1:{port}'+p) for p in paths]
  failures=[r for r in results if r.get('status',0)>=400 or
@@ -263,8 +285,10 @@ if __name__=='__main__':
  group.add_argument('--install',action='store_true')
  group.add_argument('--remove',action='store_true')
  group.add_argument('--probe',action='store_true')
+ group.add_argument('--repair-css',action='store_true')
  ap.add_argument('--port',type=int,default=4180)
  args=ap.parse_args()
  if args.install:install()
  elif args.remove:remove()
+ elif args.repair_css:repair_css()
  else:probe(args.port)
