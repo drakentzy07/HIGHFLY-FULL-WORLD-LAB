@@ -1,0 +1,23 @@
+name: HIGHFLY P43 Isolated Recovery
+on:
+  push:
+    branches:
+      - highfly-world7-p64-entry-ui-v2-20261102
+    paths:
+      - scripts/highfly_p43_isolated_recovery.py
+      - tests/test_highfly_p43_isolated_recovery.py
+      - .github/workflows/highfly-p43-isolated-recovery.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checkpoint-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate isolated checkpoint recovery and non-destructive behavior
+        run: python -m unittest discover -s tests -p 'test_highfly_p43_isolated_recovery.py' -v
