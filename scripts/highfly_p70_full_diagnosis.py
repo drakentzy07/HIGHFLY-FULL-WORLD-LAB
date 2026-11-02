@@ -350,9 +350,9 @@ def audit():
         "sampleRows":[r for r in rows if r["url"].lstrip("/") in SAMPLES],
         "allResources":rows,"p69PublicLinks":links,"entryVariants":variants,
         "httpLive":{
-            "index":probe("http://127.0.0.1:4176/"),
-            "main":probe("http://127.0.0.1:4176/src/main.ts"),
-            "sampleMech":probe("http://127.0.0.1:4176/models/creatures/mech.glb"),
+            "index":probe(f"http://127.0.0.1:{os.environ.get('HF_P70_PORT', '4176')}/"),
+            "main":probe(f"http://127.0.0.1:{os.environ.get('HF_P70_PORT', '4176')}/src/main.ts"),
+            "sampleMech":probe(f"http://127.0.0.1:{os.environ.get('HF_P70_PORT', '4176')}/models/creatures/mech.glb"),
         },
         "limitations":[
             "Static string paths miss dynamically constructed URLs; browser log completes evidence",
