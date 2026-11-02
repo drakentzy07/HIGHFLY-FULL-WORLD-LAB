@@ -110,20 +110,25 @@ def apply():
     work=Path(temp)
     binaries=[]
     for i,row in enumerate(selected):
-     source=p12.unpack_selected(z,table,row["member"],work/("src"+str(i)))
-     built=work/("model"+str(i)+".glb")
-     p=subprocess.run([str(executable),"copy",str(source),str(built)],
-      cwd=ORIGINAL,encoding="utf8",capture_output=True,timeout=120)
-     if p.returncode:
-      raise RuntimeError("CLEAN_OWNED_CONVERSION_FAILED "+row["path"]+" "+p.stderr[-350:])
-     if not p21.check_binary(built,row["path"]):
-      raise RuntimeError("CLEAN_OWNED_GLB_BINARY_INVALID "+row["path"])
-     meta=glb_metadata(built)
-     if not meta["valid"] or meta["meshes"]<1:
-      raise RuntimeError("CLEAN_OWNED_GLB_NO_MESHES "+row["path"])
-     if row["path"] in BODIES and (meta["skinnedMeshes"]<1 or meta["animations"]<1):
-      raise RuntimeError("CLEAN_OWNED_CHARACTER_MISSING_SKIN_OR_ANIMATION "+row["path"])
-     binaries.append((row,built,meta,sha(built)))
+     try:
+      source=p12.unpack_selected(z,table,row["member"],work/("src"+str(i)))
+      built=work/("model"+str(i)+".glb")
+      p=subprocess.run([str(executable),"copy",str(source),str(built)],
+       cwd=ORIGINAL,encoding="utf8",capture_output=True,timeout=120)
+      if p.returncode:
+       raise RuntimeError("CONVERSION_FAILED "+p.stderr[-180:])
+      if not p21.check_binary(built,row["path"]):
+       raise RuntimeError("BAD_GLB_BINARY")
+      meta=glb_metadata(built)
+      if not meta["valid"] or meta["meshes"]<1:
+       raise RuntimeError("NO_MESHES")
+      if row["path"] in BODIES and (meta["skinnedMeshes"]<1 or meta["animations"]<1):
+       raise RuntimeError("CHARACTER_NO_SKIN_OR_ANIMATION")
+      binaries.append((row,built,meta,sha(built)))
+     except (RuntimeError,ValueError,KeyError,subprocess.TimeoutExpired) as err:
+      blocked.append({"path":row["path"],"reason":"EXACT_OWNED_MODEL_UNUSABLE",
+        "detail":str(err)[:280]})
+      continue
     for row,built,meta,hashval in binaries:
      dest=LAB/"public"/row["path"]
      if dest.exists() or dest.is_symlink():
@@ -138,7 +143,7 @@ def apply():
    "status":"OWNED_CHARACTER_IMPORT_DONE_BROWSER_UNVERIFIED",
    "capturedUtc":datetime.now(timezone.utc).isoformat(),
    "library":"PRIVATE_USER_OWNED_KAYKIT_COMPLETE_SOURCE_V7",
-   "mode":"APPLY","installed":selected,"blocked":blocked,
+   "mode":"APPLY","installed":[row for row in selected if "sha256" in row],"blocked":blocked,
    "nineClasses":[ "warrior","paladin","hunter","rogue","priest",
                     "shaman","mage","warlock","druid"],
    "npcLooksEdited":False,"gameCodeEdited":False,
@@ -148,7 +153,7 @@ def apply():
   REPORT.parent.mkdir(parents=True,exist_ok=True)
   REPORT.write_text(json.dumps(result,indent=2,ensure_ascii=False)+"\n","utf8")
   print("[CLEAN OWNED SOURCE IMPORT] "+json.dumps({
-   "installedModels":len(selected),"blocked":blocked,
+   "installedModels":sum("sha256" in row for row in selected),"blocked":blocked,
    "existingModels":sum(r["state"]=="ALREADY_PRESENT" for r in ready),
    "report":str(REPORT),"browserVerified":False},ensure_ascii=False,indent=2))
  except BaseException:
