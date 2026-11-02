@@ -161,9 +161,10 @@ def preflight(stage: Path=STAGE, repo: Path=ROOT, reports: Path=REPORTS, out: Pa
         raise RuntimeError("P64_P71_STATUS_NOT_READY")
     eq("P71_MAIN_SHA", old_status.get("sourceHashes",{}).get(MAIN,"").encode(),
        sha(snap["P71pre"]).encode())
-    eq("P71B_BACKUP_MAIN", snap["P71pre"],
-       read(reports/"highfly-world7/p71/backup/P71B_BEFORE_CLASS_FIELD_FIX.ts",
-            reports,"P71Bbackup"))
+    eq("P71B_BACKUP_MAIN_HASH",
+       old_status.get("sourceHashes",{}).get(MAIN,"").encode(),
+       sha(read(reports/"highfly-world7/p71/backup/P71B_BEFORE_CLASS_FIELD_FIX.ts",
+               reports,"P71Bbackup")).encode())
     current = {rel:read(stage/rel,stage,"stage_"+rel) for rel in ALL_TOUCHED}
     eq("P71B_CURRENT_MAIN_SHA",
        fix_status.get("updatedSha256","").encode(),sha(current[MAIN]).encode())
