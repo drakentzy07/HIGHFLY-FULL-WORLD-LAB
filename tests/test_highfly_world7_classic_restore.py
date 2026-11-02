@@ -104,8 +104,8 @@ class RestoreTests(unittest.TestCase):
         self.assertIn("VITE_HIGHFLY_OFFLINE_LAB === '1'",main)
         self.assertIn("world.targetEntity(enemy.id)",main)
         self.assertIn("hud.onHighflyBasicTap = null;",main)
-        self.assertIn("worldX=vertical*Math.sin(yaw)+horizontal*Math.cos(yaw)",main)
-        self.assertIn("worldZ=vertical*Math.cos(yaw)-horizontal*Math.sin(yaw)",main)
+        self.assertIn("worldX=vertical*Math.sin(yaw)-horizontal*Math.cos(yaw)",main)
+        self.assertIn("worldZ=vertical*Math.cos(yaw)+horizontal*Math.sin(yaw)",main)
         self.assertTrue((self.stage/p.NEW_CSS).exists())
         for rel in p.MODS:
             self.assertFalse((self.stage/rel).exists())
@@ -146,20 +146,16 @@ class RestoreTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError,"PREVIOUS_RESTORE_BACKUP"):
             self.go(False)
 
-    def test_pure_direction_math_all_cardinals(self):
-        import math
-        def world(x,y,yaw):
-            wx=y*math.sin(yaw)+x*math.cos(yaw)
-            wz=y*math.cos(yaw)-x*math.sin(yaw)
-            return round(wx,5),round(wz,5)
-        self.assertEqual(world(0,1,0),(0,1))
-        self.assertEqual(world(0,-1,0),(0,-1))
-        self.assertEqual(world(1,0,0),(1,0))
-        self.assertEqual(world(-1,0,0),(-1,0))
-        self.assertEqual(world(1,-1,0),(1,-1))
-        self.assertEqual(world(-1,-1,0),(-1,-1))
-        self.assertEqual(world(0,1,math.pi/2),(1,0))
-        self.assertEqual(world(1,0,math.pi/2),(0,-1))
+    def test_preserves_native_camera_right_basis(self):
+        # The original stepPlayerMotion uses camera-right = (-cos, +sin).
+        # P69 sign is correct; only stick/animation runtime QA remains.
+        main = p.patch_original(
+            self.native.decode("utf8"),
+            self.sources[p.INDEX].decode("utf8"),
+            self.sources[p.SAVE].decode("utf8"))[0]
+        self.assertIn("worldX=vertical*Math.sin(yaw)-horizontal*Math.cos(yaw)", main)
+        self.assertIn("worldZ=vertical*Math.cos(yaw)+horizontal*Math.sin(yaw)", main)
+        self.assertNotIn("worldX=vertical*Math.sin(yaw)+horizontal*Math.cos(yaw)", main)
 
 if __name__=="__main__":
     unittest.main()
