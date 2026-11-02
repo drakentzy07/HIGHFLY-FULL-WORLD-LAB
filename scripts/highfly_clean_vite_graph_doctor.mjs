@@ -13,9 +13,9 @@ const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const LAB=path.join(ROOT,'.workspace','highfly-origin-clean-0447');
 const REPORT=path.join(ROOT,'.workspace','reports','highfly-clean-0447','VITE_STATIC_MODULE_GRAPH.json');
 const PORT=Number(process.env.HF_CLEAN_PORT||4180);
-const LIMIT=Number(process.env.HF_CLEAN_GRAPH_LIMIT||750);
+const LIMIT=Number(process.env.HF_CLEAN_GRAPH_LIMIT||8000);
 const CONCURRENCY=Number(process.env.HF_CLEAN_GRAPH_WORKERS||6);
-if(!Number.isInteger(PORT)||PORT<1024||PORT>65535||!Number.isInteger(LIMIT)||LIMIT<10||LIMIT>4000||
+if(!Number.isInteger(PORT)||PORT<1024||PORT>65535||!Number.isInteger(LIMIT)||LIMIT<10||LIMIT>12000||
    !Number.isInteger(CONCURRENCY)||CONCURRENCY<1||CONCURRENCY>16) throw Error('INVALID_GRAPH_CONFIG');
 const ORIGIN='http://127.0.0.1:'+PORT;
 const makeUrl=value=>new URL(value,ORIGIN+'/');
