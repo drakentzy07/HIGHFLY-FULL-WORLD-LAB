@@ -21,7 +21,7 @@ const LAB=path.join(WORK,'highfly-p43-restore-lab');
 const ORIGINAL=path.join(WORK,'claudecraft-v0.44.7');
 const REPORT=path.join(WORK,'reports','highfly-world7','P43_IMPORT_GRAPH_FAILURES.json');
 const BASE='http://127.0.0.1:4175';
-const MAX_MODULES=900, MAX_FAILURES=12, BATCH=12;
+const MAX_MODULES=12000, MAX_FAILURES=20, BATCH=24;
 const out={
   phase:'P43_ESM_IMPORT_GRAPH',
   target:BASE+'/src/main.ts',
@@ -81,6 +81,7 @@ function fileHint(href){
 const queue=[{url:BASE+'/src/main.ts',parent:'index.html'}];
 const discovered=new Set([queue[0].url]);
 const checked=new Set();
+let lastProgress=0;
 const failures=[];
 let edges=0,skipped=0,jsCount=0;
 function addFailure(item,kind,extra){
@@ -103,6 +104,10 @@ async function visit(item){
     return;
   }
   checked.add(item.url);
+  if(checked.size-lastProgress>=500){
+    lastProgress=checked.size;
+    console.error(`[P43 IMPORT GRAPH] Checked ${checked.size} modules; queued ${queue.length}; failures ${failures.length}`);
+  }
   if(!response.ok){
     addFailure(item,'HTTP_'+response.status,{
       contentType,redirected:response.redirected,
@@ -144,7 +149,7 @@ out.summary={visited:checked.size,discovered:discovered.size,staticEdges:edges,
 out.failures=failures;
 out.nextAction=failures.length
  ? 'Inspect the FIRST error and its importedBy path; restore verified missing MIT source into P43 only.'
- : queue.length?'Increase MAX_MODULES only if needed.':'No network/MIME failures in crawled static imports; inspect ESM export binding/runtime.';
+ : queue.length?'Still pending imports; review module limit.':'All fetched static imports checked; inspect ESM export binding/runtime errors if browser entry still fails.';
 mkdirSync(path.dirname(REPORT),{recursive:true});
 writeFileSync(REPORT,JSON.stringify(out,null,2)+'\n');
 console.log('[HIGHFLY P43 IMPORT GRAPH]\n'+JSON.stringify(out,null,2));
