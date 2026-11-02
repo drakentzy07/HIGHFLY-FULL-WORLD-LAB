@@ -11,6 +11,7 @@ from collections import Counter
 import csv
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -48,9 +49,10 @@ def main():
       'timestampUtc':datetime.now(timezone.utc).isoformat(),
       'mode':'READ_ONLY_AUDIT', 'activeP64Modified':False, 'P43Modified':False,
       'saveModified':False,'commercialReleaseApproved':False,
+      'allowedDesiredLicenses':['MIT','CC0-1.0'],
       'originalCheckpointIsFullLicensedStandaloneBuild':False,
       'gameCodeAndMediaAreSeparateLicenseDecisions':True,
-      'p439ClassSelectMarkup':all('data-class="'+x+'"' in html for x in
+      'nineClassSelectMarkup':all('data-class="'+x+'"' in html for x in
           ('warrior','paladin','hunter','rogue','priest','shaman','mage','warlock','druid')),
       'offlineNativeSelectorInMarkup':'id="server-opt-offline"' in html,
       'diagnosticsPresent':'highfly_p43_android_diag.js' in html,
@@ -102,21 +104,41 @@ def main():
           'entry':top.name,'isSymlink':top.is_symlink(),
           'pointsIntoActiveStage':top.is_symlink() and
              top.resolve().is_relative_to((STAGE/'public').resolve())})
-    for f in root.rglob('*'):
-        if not f.is_file() or f.suffix.lower() not in MEDIA:continue
-        rel=f.relative_to(root).as_posix()
-        row=p30by.get(rel,{})
-        assets.append({
-          'path':rel,'bytes':f.stat().st_size,
-          'kind':f.suffix.lower(),
-          'p30ProviderFromSpec':row.get('providerFromSpec') or None,
-          'p30LicenseEvidence':row.get('licenseEvidenceStatus') or 'NOT_IN_P30_OR_NO_EVIDENCE',
-          'servedFromActiveP64Stage':f.resolve().is_relative_to((STAGE/'public').resolve()),
-          'licensedForRedistribution':'NOT_VERIFIED_BY_THIS_AUDIT'
-        })
+    unsafe_links=[]
+    # Python pathlib.rglob doesn't walk symlinked asset directories by default.
+    # The restored P43 preview uses symlinks to the P64 public *directories*.
+    for directory,names,files in os.walk(root,followlinks=True):
+        d=Path(directory)
+        allowed=(d.resolve().is_relative_to(root.resolve()) or
+                 d.resolve().is_relative_to((STAGE/'public').resolve()))
+        if not allowed:
+            unsafe_links.append(str(d))
+            names.clear()
+            continue
+        names[:]=[name for name in names if
+          (d/name).resolve().is_relative_to(root.resolve()) or
+          (d/name).resolve().is_relative_to((STAGE/'public').resolve())]
+        for filename in files:
+            f=d/filename
+            if not f.is_file() or f.suffix.lower() not in MEDIA:continue
+            if not (f.resolve().is_relative_to(root.resolve()) or
+                    f.resolve().is_relative_to((STAGE/'public').resolve())):
+                unsafe_links.append(str(f))
+                continue
+            rel=f.relative_to(root).as_posix()
+            row=p30by.get(rel,{})
+            assets.append({
+              'path':rel,'bytes':f.stat().st_size,
+              'kind':f.suffix.lower(),
+              'p30ProviderFromSpec':row.get('providerFromSpec') or None,
+              'p30LicenseEvidence':row.get('licenseEvidenceStatus') or 'NOT_IN_P30_OR_NO_EVIDENCE',
+              'servedFromActiveP64Stage':f.resolve().is_relative_to((STAGE/'public').resolve()),
+              'licensedForRedistribution':'NOT_VERIFIED_BY_THIS_AUDIT'
+            })
     result['publicAssetInventory']={
       'assetCount':len(assets),'typeCounts':dict(Counter(x['kind'] for x in assets)),
       'topLevelSymlinksIntoP64':sum(x['pointsIntoActiveStage'] for x in links),
+      'symlinksOutsideP43AndP64':unsafe_links[:20],
       'topLevelSymlinksTotal':sum(x['isSymlink'] for x in links),
       'rootEntries':len(links),'fromActiveP64':sum(x['servedFromActiveP64Stage'] for x in assets),
       'p30RowsAvailable':len(p30),
@@ -141,7 +163,7 @@ def main():
     OUT.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n','utf8')
     print('[P43 PROVENANCE NPC AUDIT] '+json.dumps({
       'gameCodePreserved':True,
-      'nineClassSelector':result['p439ClassSelectMarkup'] if 'p439ClassSelectMarkup' in result else result['p43'+ '9ClassSelectMarkup'],
+      'nineClassSelector':result['nineClassSelectMarkup'],
       'npcSourceEvidence':result['codeEvidence'].get('npc_renderer'),
       'npcRoleCandidates':result['P37Cc0NpcRoleCandidates'],
       'assetCounts':{k:result['publicAssetInventory'][k] for k in
