@@ -29,8 +29,10 @@ class BootLogTest(unittest.TestCase):
     modified=html.read_text()
     self.assertEqual(modified.count(boot.TAG),2) # marker + inline script comment
     self.assertLess(modified.find('hf-clean-bootlog-bootstrap'),modified.find('<title>'))
-    self.assertIn('href="/src/styles/index.css"',modified)
+    self.assertIn('href="/src/styles/index.css?direct"',modified)
+    self.assertIn('href="/src/styles/index.extra.css?direct"',modified)
     self.assertIn('window.__HF_CLEAN_LOG__',modified)
+    boot.repair_css()  # repeated repair must be safe
     boot.remove()
     self.assertEqual(html.read_text(),original)
 
