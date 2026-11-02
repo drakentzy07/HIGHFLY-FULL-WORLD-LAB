@@ -1,0 +1,27 @@
+name: HIGHFLY WORLD7 P70 - Hunter Universal contracts
+
+on:
+  push:
+    branches:
+      - highfly-world7-p70-hunter-universal-20261102
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hunter-core-isolated:
+    name: Hunter Universal core + Codespace audit safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout P70
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Domain tests (no private stage needed)
+        run: node --test tests/highfly_hunter_universal_p70.test.mjs
+      - name: Doctor safety tests (synthetic stage only)
+        run: python3 -m unittest discover -s tests -p 'test_highfly_world7_codespace_audit.py' -v
