@@ -1,0 +1,23 @@
+name: HIGHFLY WORLD7 P64 Entry UI V2
+on:
+  push:
+    branches:
+      - highfly-world7-p64-entry-ui-v2-20261102
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safe-ui-restyle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: UI V2 preserved loader and rollback
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_p64_entry_v2.py' -v
+      - name: Upstream entry and P64 clean recovery contracts
+        run: |
+          python -m unittest discover -s tests -p 'test_highfly_world7_p64_entry_cleanup.py' -v
+          python -m unittest discover -s tests -p 'test_highfly_world7_restore_p64.py' -v
