@@ -1,0 +1,21 @@
+name: HIGHFLY WORLD7 P64 Entry Clean
+on:
+  push:
+    branches:
+      - highfly-world7-p64-entry-clean-20261102
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  conservative-ui-cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exact P64 entry recovery tests
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_p64_entry_cleanup.py' -v
+      - name: Preserve P64 recovery contracts
+        run: python -m unittest discover -s tests -p 'test_highfly_world7_restore_p64.py' -v
