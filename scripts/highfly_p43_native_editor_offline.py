@@ -84,7 +84,7 @@ def patch_main(src:str)->str:
     # No bypass of isOfflineModeAvailable. Dev server route only; the existing
     # game still owns the dropdown, play button and offline character creation.
     return src.replace(anchor,
-        "    // "+MARK+": choose existing dev-only offline destination first.\\n"
+        "    // "+MARK+": choose existing dev-only offline destination first.\n"
         "    applyServerMode(offlineAvailable ? 'offline' : 'online');",1)
 
 def plan(lab:Path=LAB):
