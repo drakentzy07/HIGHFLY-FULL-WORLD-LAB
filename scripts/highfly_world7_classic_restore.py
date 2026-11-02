@@ -2,7 +2,7 @@
 """HIGHFLY WORLD7: restore ClaudeCraft native class creation, repair only touch wiring.
 
 Removes DrakenLAB P71/P71B through verified P71 backup; does NOT undo P68/P69
-other than an explicit stick-sign fix, disabling P69 manual ATK in favor of
+other than disabling P69 manual ATK in favor of
 native ATK, and making monster screen taps target-only. Reuses original 9-class
 offline selector when explicitly compiled as PRIVATE OFFLINE LAB. Honors P41 save
 if installed and upgrades the previous single-name save slot to per-name slots.
@@ -83,14 +83,14 @@ def patch_original(main: str, index: str, saves: str | None) -> tuple[str,str,st
         "  const offlineAvailable = isOfflineModeAvailable(\n"
         "    import.meta.env.DEV || import.meta.env.VITE_HIGHFLY_OFFLINE_LAB === '1');",
         "NATIVE_SELECTOR")
-    main = once(
-        main,
+    # ClaudeCraft stepPlayerMotion (sim/player_motion.ts) uses right=(-cos f,+sin f).
+    # P69 already matches that native convention. Do not invert world X/Z again!
+    native_heading = (
         "const worldX=vertical*Math.sin(yaw)-horizontal*Math.cos(yaw);\n"
-        "        const worldZ=vertical*Math.cos(yaw)+horizontal*Math.sin(yaw);",
-        "// " + MARK + ": camera-right +X; continuous analog thumb angle (all 360 degrees).\n"
-        "        const worldX=vertical*Math.sin(yaw)+horizontal*Math.cos(yaw);\n"
-        "        const worldZ=vertical*Math.cos(yaw)-horizontal*Math.sin(yaw);",
-        "JOYSTICK_360_SIGN")
+        "        const worldZ=vertical*Math.cos(yaw)+horizontal*Math.sin(yaw);"
+    )
+    if main.count(native_heading) != 1:
+        raise RuntimeError("CLASSIC_JOYSTICK_NATIVE_HEADING_DRIFT")
     main = once(
         main,
         "hud.onHighflyBasicTap = () => highflyBasicTap();",
@@ -198,7 +198,7 @@ def run(apply=False, *, stage=STAGE, out=OUT, repo=ROOT, build=None) -> dict:
         "drakenlabRemoved": False,
         "nativeAtkButton": True,
         "touchWorldOnlyTargets": True,
-        "joystickAngleMapping": "CAMERA_RELATIVE_360_MATH",
+        "joystickAngleMapping": "P69_NATIVE_SIGN_PRESERVED_FURTHER_RUNTIME_QA_NEEDED",
         "passiveButton": "ONE_NATIVE_BUTTON_STYLED",
         "offlineSaveSlot": "BY_NAME_WITH_LEGACY_FALLBACK",
         "sourceOriginalUnmodified": True,
