@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import urllib.request
 import urllib.error
+import urllib.parse
 
 ROOT=Path(__file__).resolve().parents[1]
 WORK=ROOT/'.workspace'
@@ -218,13 +219,23 @@ def check_url(url):
   status=e.code;content=e.headers.get('Content-Type','')
   raw=e.read(8192)
  except Exception as e:
-  return {'urlPath':urllib.request.urlparse(url).path,'state':'UNREACHABLE',
+  return {'urlPath':urllib.parse.urlparse(url).path,'state':'UNREACHABLE',
     'error':str(e)[:210]}
  body=raw[:160].decode('utf8','replace').replace('\n',' ')
- return {'urlPath':urllib.request.urlparse(url).path,'status':status,
+ path=urllib.parse.urlparse(url).path
+ is_glb=path.lower().endswith('.glb')
+ is_css=path.lower().endswith('.css')
+ is_js=path.endswith('main.ts') or path=='/@vite/client'
+ expected_type=not (is_glb or is_css or is_js) or ((
+   is_glb and raw[:4]==b'glTF') or
+   (is_css and 'text/css' in content) or
+   (is_js and ('javascript' in content or 'typescript' in content)))
+ return {'urlPath':path,'status':status,
    'contentType':content,'sample':body if status>=400 else '',
-   'looksLikeHtmlFallback':('text/html' in content and
-      '/src/' in url),'bytesSampled':len(raw)}
+   'looksLikeHtmlFallback':('text/html' in content and path!='/'),
+   'validExpectedType':expected_type,
+   'magic':raw[:4].hex() if is_glb else None,
+   'bytesSampled':len(raw)}
 
 def probe(port):
  lab=require_clean()
@@ -233,7 +244,7 @@ def probe(port):
         '/models/creatures/wolf.glb']
  results=[check_url(f'http://127.0.0.1:{port}'+p) for p in paths]
  failures=[r for r in results if r.get('status',0)>=400 or
-           r.get('state')=='UNREACHABLE' or r.get('looksLikeHtmlFallback')]
+           r.get('state')=='UNREACHABLE' or r.get('looksLikeHtmlFallback') or r.get('validExpectedType') is False]
  report={'scope':'CLEAN_0447_LOCAL_VITE_HTTP_ONLY',
   'capturedUtc':datetime.now(timezone.utc).isoformat(),
   'port':port,'checks':results,'failures':len(failures),
