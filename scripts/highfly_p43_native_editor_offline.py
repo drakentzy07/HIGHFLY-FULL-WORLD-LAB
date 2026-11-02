@@ -26,6 +26,51 @@ BACKUPS=LAB/".hf-p43-native-editor-backup"
 REPORT=WORK/"reports/highfly-world7/P43_NATIVE_EDITOR_OFFLINE.json"
 CLASSES=("warrior","paladin","hunter","rogue","priest","shaman","mage","warlock","druid")
 MARK="HIGHFLY_P43_RESTORE_NATIVE_9_CLASSES"
+FULLSCREEN_PATH="public/highfly_p43_native_fullscreen.js"
+FULLSCREEN_JS=r"""// HIGHFLY P43 native fullscreen: explicit browser gesture; no loader replacements.
+(function(){
+  'use strict';
+  function mount(){
+    const play=document.getElementById('btn-play');
+    if(!play || document.getElementById('hf-p43-fullscreen-btn'))return;
+    const button=document.createElement('button');
+    button.type='button';
+    button.id='hf-p43-fullscreen-btn';
+    button.className='btn btn-secondary';
+    button.textContent='PANTALLA COMPLETA';
+    button.setAttribute('aria-label','Activar pantalla completa');
+    button.style.cssText='display:block;position:relative;z-index:3;margin:10px auto;min-height:44px;padding:10px 24px;font:600 13px system-ui,sans-serif;border:1px solid #78bee9;border-radius:8px;background:#0e2033;color:#f8fcff;cursor:pointer;max-width:95%;';
+    play.insertAdjacentElement('afterend',button);
+    button.addEventListener('click',function(){
+      if(document.fullscreenElement){
+        Promise.resolve(document.exitFullscreen?.()).catch(function(){});
+        return;
+      }
+      const root=document.documentElement;
+      const request=root.requestFullscreen?.bind(root) || root.webkitRequestFullscreen?.bind(root);
+      if(!request){
+        button.textContent='PANTALLA COMPLETA NO DISPONIBLE';
+        return;
+      }
+      try{
+        Promise.resolve(request()).then(function(){
+          const lock=screen.orientation?.lock;
+          if(typeof lock==='function')Promise.resolve(lock.call(screen.orientation,'landscape')).catch(function(){});
+        }).catch(function(){
+          button.textContent='CHROME NO PERMITIÓ FULLSCREEN';
+        });
+      }catch(e){
+        button.textContent='CHROME NO PERMITIÓ FULLSCREEN';
+      }
+    });
+    document.addEventListener('fullscreenchange',function(){
+      button.textContent=document.fullscreenElement?'SALIR DE PANTALLA COMPLETA':'PANTALLA COMPLETA';
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);
+  else mount();
+})();
+"""
 
 def sha(b:bytes)->str:
     return hashlib.sha256(b).hexdigest()
@@ -43,10 +88,8 @@ def patch_html(src:str)->str:
     if src.count('id="charcreate-panel"')!=1:
         raise RuntimeError("P43_NATIVE_CHARACTER_EDITOR_MISSING")
     expected=set(CLASSES)
-    chunks=[]
     for marker in ('id="charcreate-panel"','id="offline-select"'):
         start=src.index(marker)
-        end=src.find("</div>",start)
         # offline/online panels contain nested divs; inspect up to closing of
         # native class picker by finding all 9 class buttons in a 9 KB window.
         near=src[start:start+18000]
@@ -54,7 +97,6 @@ def patch_html(src:str)->str:
         if not expected.issubset(classes):
             raise RuntimeError("P43_NATIVE_NINE_CLASS_CONTROLS_MISSING "+
                                marker+" "+",".join(sorted(expected-classes)))
-        chunks.append(sorted(classes))
     old_style=re.compile(
         r'<style id="highfly-p42-hunter-styles">\s*.*?</style>\s*',
         flags=re.DOTALL)
@@ -66,7 +108,8 @@ def patch_html(src:str)->str:
     if ("highfly-p42-hunter-styles" in result or
             "highfly_p42_hunter.js" in result):
         raise RuntimeError("P43_HUNTER_CSS_STILL_INCLUDED")
-    result=result.replace("</head>",f"<!-- {MARK}: original editor and its 9 class controls restored -->\n</head>",1)
+    result=result.replace("</head>",f"<!-- {MARK}: original editor and its 9 class controls restored -->\n"
+        f'<script defer src="/highfly_p43_native_fullscreen.js"></script>\n</head>',1)
     return result
 
 def patch_main(src:str)->str:
@@ -98,14 +141,19 @@ def plan(lab:Path=LAB):
     m=lab/"src/main.ts"
     orig_html=checked_read(h)
     orig_main=checked_read(m)
+    fulljs=lab/FULLSCREEN_PATH
+    if fulljs.exists() or fulljs.is_symlink():
+        raise RuntimeError("P43_FULLSCREEN_JS_ALREADY_EXISTS")
     new_html=patch_html(orig_html)
     new_main=patch_main(orig_main)
     return {
         "files":{"index.html":(orig_html,new_html),
                  "src/main.ts":(orig_main,new_main)},
+        "newFiles":[FULLSCREEN_PATH],
         "classes":list(CLASSES),
         "mode":"DRY_RUN","activeP64Modified":False,
         "nativeFullScreenHookPresent":True,
+        "manualMobileFullscreenButton":True,
         "nativeOfflineGatePreserved":True,
         "browserVerified":False,
         "backupDir":str(lab/".hf-p43-native-editor-backup"),
@@ -129,11 +177,14 @@ def apply(lab:Path=LAB):
             if checked_read(dest)!=a:
                 raise RuntimeError("P43_SOURCE_CHANGED_DURING_PATCH")
             dest.write_text(b,"utf8")
+        jsfile=lab/FULLSCREEN_PATH
+        jsfile.write_text(FULLSCREEN_JS,"utf8")
         summary={k:v for k,v in info.items() if k!="files"}
         summary.update({"mode":"APPLY","htmlSha256":sha((lab/"index.html").read_bytes()),
                         "mainSha256":sha((lab/"src/main.ts").read_bytes()),
                         "originalEditorRestoredInMarkup":True,
                         "originalOfflinePlayPreferred":True,
+                        "native9ClassesWithoutP42HiddenFilter":True,
                         "browserVerified":False,
                         "note":"Vite dev: offline is native. Screen fullscreen requests need user gesture. P41 saves one name-slot globally."})
         REPORT.parent.mkdir(parents=True,exist_ok=True)
@@ -142,6 +193,9 @@ def apply(lab:Path=LAB):
     except Exception:
         for name,(a,b) in original_values.items():
             (lab/name).write_text(a,"utf8")
+        new_js=lab/FULLSCREEN_PATH
+        if new_js.is_file() and not new_js.is_symlink() and new_js.read_text("utf8")==FULLSCREEN_JS:
+            new_js.unlink()
         raise
 
 def main():
@@ -154,6 +208,7 @@ def main():
         p=plan()
         result={k:v for k,v in p.items() if k!="files"}
         result["willEdit"]=["index.html","src/main.ts"]
+        result["willCreate"]=[FULLSCREEN_PATH]
         result["willEditActiveP64"]=False
     print("[HIGHFLY P43 NATIVE EDITOR] "+json.dumps(result,indent=2,ensure_ascii=False))
 
