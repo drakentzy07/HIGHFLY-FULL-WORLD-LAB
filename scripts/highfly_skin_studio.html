@@ -53,7 +53,7 @@ async function initView(){try{
   previewReady=true;loadOriginal();
 }catch(e){el('#viewStatus').textContent='Visor 3D no disponible: '+e.message;}}
 const gltf=new GLTFLoader(),texLoader=new THREE.TextureLoader();
-try{const obj=await import('https://cdn.jsdelivr.net/npm/meshoptimizer@0.25.0/meshopt_decoder.module.js');if(obj.MeshoptDecoder)gltf.setMeshoptDecoder(obj.MeshoptDecoder);}catch(e){console.warn('MeshoptDecoder no disponible',e);}
+try{const obj=await import('three/addons/libs/meshopt_decoder.module.js');if(obj.MeshoptDecoder)gltf.setMeshoptDecoder(obj.MeshoptDecoder);}catch(e){console.warn('MeshoptDecoder no disponible',e);}
 const readGLB=url=>new Promise((ok,no)=>gltf.load(url,ok,undefined,no));
 const readTex=url=>new Promise((ok,no)=>texLoader.load(url,t=>{t.colorSpace=THREE.SRGBColorSpace;t.flipY=false;ok(t);},undefined,no));
 function showTex(tex){for(const o of meshes){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(!m.userData.highflyBase)m.userData.highflyBase=m.map||null;m.map=tex||m.userData.highflyBase;m.needsUpdate=true;}}}
